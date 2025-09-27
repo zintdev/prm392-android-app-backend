@@ -1,41 +1,45 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+### Build ###
+/build/
+/out/
+/target/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
+### Gradle ###
+.gradle/
+/gradle-app.setting
+!gradle-wrapper.jar
+**/build/
 
 ### IntelliJ IDEA ###
-.idea
-*.iws
+.idea/
 *.iml
+*.iws
 *.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+### Eclipse ###
+.settings/
+.classpath
+.project
+bin/
 
-### VS Code ###
-.vscode/
-"target/" 
-".idea/" 
-"*.iml" 
-"application.properties" 
+### Logs ###
+*.log
+logs/
+
+### OS generated ###
+.DS_Store
+Thumbs.db
+
+### Spring Boot ###
+# Application configs (không commit mật khẩu DB)
+src/main/resources/application.properties
+src/main/resources/application.yml
+
+# Commit file mẫu để dev dùng
+!src/main/resources/application-example.properties
+!src/main/resources/application-example.yml
+
+### Others ###
+*.tmp
+*.swp
+*.bak
+*.lock
