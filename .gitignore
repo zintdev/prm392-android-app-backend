@@ -36,7 +36,7 @@ src/main/resources/application.yml
 
 # Commit file mẫu để dev dùng
 !src/main/resources/application-example.properties
-!src/main/resources/application-example.yml
+!src/main/resources/application.properties
 
 ### Others ###
 *.tmp
@@ -44,4 +44,3 @@ src/main/resources/application.yml
 *.bak
 *.lock
 
-application.properties
