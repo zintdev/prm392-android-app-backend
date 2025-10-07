@@ -6,11 +6,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @OpenAPIDefinition(
-        info = @Info(
-                title = "User API",
-                version = "1.0",
-                description = "OpenAPI docs for User service"
-        )
+    info = @Info(title = "User API", version = "1.0",
+                 description = "OpenAPI docs for User service"),
+    servers = { @io.swagger.v3.oas.annotations.servers.Server(url = "/") }
 )
-public class SwaggerConfig {
-}
+public class SwaggerConfig {}
