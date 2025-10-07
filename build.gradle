@@ -45,6 +45,8 @@ dependencies {
 
     // OpenAPI (springdoc) cho WebMVC + Swagger UI
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
-    // Nếu dùng WebFlux thì dùng starter-webflux-ui (đừng “trộn” MVC/WebFlux)
+
+     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
+
 tasks.named('test') { useJUnitPlatform() }
