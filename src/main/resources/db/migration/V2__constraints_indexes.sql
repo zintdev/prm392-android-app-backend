@@ -1,10 +1,15 @@
--- Index tra cứu khoá ngoại (sử dụng đúng tên bảng/cột từ V1)
-CREATE INDEX IF NOT EXISTS idx_products_category   ON products(category_id);
-CREATE INDEX IF NOT EXISTS idx_carts_user         ON carts(user_id);
-CREATE INDEX IF NOT EXISTS idx_cart_items_cart    ON cart_items(cart_id);
-CREATE INDEX IF NOT EXISTS idx_cart_items_product ON cart_items(product_id);
-CREATE INDEX IF NOT EXISTS idx_orders_cart        ON orders(cart_id);
-CREATE INDEX IF NOT EXISTS idx_orders_user        ON orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_payments_order     ON payments(order_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
+-- Unique cho username/email
+ALTER TABLE users
+  ADD CONSTRAINT uq_users_username UNIQUE (username),
+  ADD CONSTRAINT uq_users_email UNIQUE (email);
+
+-- Index tra cứu khoá ngoại
+CREATE INDEX IF NOT EXISTS idx_products_categoryid ON products(categoryid);
+CREATE INDEX IF NOT EXISTS idx_carts_userid ON carts(userid);
+CREATE INDEX IF NOT EXISTS idx_cartitems_cartid ON cartitems(cartid);
+CREATE INDEX IF NOT EXISTS idx_cartitems_productid ON cartitems(productid);
+CREATE INDEX IF NOT EXISTS idx_orders_cartid ON orders(cartid);
+CREATE INDEX IF NOT EXISTS idx_orders_userid ON orders(userid);
+CREATE INDEX IF NOT EXISTS idx_payments_orderid ON payments(orderid);
+CREATE INDEX IF NOT EXISTS idx_notifications_userid ON notifications(userid);
+CREATE INDEX IF NOT EXISTS idx_chatmessages_userid ON chatmessages(userid);
