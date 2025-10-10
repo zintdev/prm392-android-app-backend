@@ -28,9 +28,6 @@ public class Request {
     
     @Size(max = 15, message = "Phone number must not exceed 15 characters")
     private String phoneNumber;
-    
-    @Size(max = 255, message = "Address must not exceed 255 characters")
-    private String address;
-    
+
     private String role;
 }

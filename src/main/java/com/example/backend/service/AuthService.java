@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.domain.User;
+import com.example.backend.domain.entity.User;
+import com.example.backend.domain.enums.UserRole;
 import com.example.backend.dto.*;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.config.JwtUtil;
@@ -15,26 +16,32 @@ public class AuthService {
     private final JwtUtil jwt;
 
     public AuthService(UserRepository users, PasswordEncoder encoder, JwtUtil jwt) {
-        this.users = users; this.encoder = encoder; this.jwt = jwt;
+        this.users = users;
+        this.encoder = encoder;
+        this.jwt = jwt;
     }
 
     @Transactional
     public UserSummary register(RegisterRequest req) {
-        if (users.existsByUsernameIgnoreCase(req.username)) throw new IllegalArgumentException("Username already exists");
-        if (users.existsByEmailIgnoreCase(req.email)) throw new IllegalArgumentException("Email already exists");
+        if (users.existsByUsernameIgnoreCase(req.username))
+            throw new IllegalArgumentException("Username already exists");
+        if (users.existsByEmailIgnoreCase(req.email))
+            throw new IllegalArgumentException("Email already exists");
 
         User u = new User();
         u.setUsername(req.username.trim());
         u.setEmail(req.email.trim());
         u.setPasswordHash(encoder.encode(req.password));
         u.setPhoneNumber(req.phoneNumber);
-        u.setAddress(req.address);
-        u.setRole("USER");
+        u.setRole(UserRole.CUSTOMER);
 
         users.save(u);
 
         UserSummary s = new UserSummary();
-        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole();
+        s.id = u.getId();
+        s.username = u.getUsername();
+        s.email = u.getEmail();
+        s.role = u.getRole().toString();
         return s;
     }
 
@@ -45,15 +52,20 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
         if (!encoder.matches(req.password, u.getPasswordHash()))
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new IllegalArgumentException("Wrong password!");
 
-        String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole());
+        String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole().toString());
 
         UserSummary s = new UserSummary();
-        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole();
+        s.id = u.getId();
+        s.username = u.getUsername();
+        s.email = u.getEmail();
+        s.role = u.getRole().toString();
+
 
         AuthResponse res = new AuthResponse();
-        res.token = token; res.user = s;
+        res.token = token;
+        res.user = s;
         return res;
     }
 }

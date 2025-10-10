@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@Tag(name = "User Management", description = "APIs for managing users")
+@Tag(name = "Users", description = "APIs for managing users")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
     

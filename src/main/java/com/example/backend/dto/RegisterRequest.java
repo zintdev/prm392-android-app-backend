@@ -18,7 +18,4 @@ public class RegisterRequest {
 
     @Size(max = 15)
     public String phoneNumber;
-
-    @Size(max = 255)
-    public String address;
 }
