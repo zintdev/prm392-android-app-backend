@@ -8,17 +8,17 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "cart_items", uniqueConstraints = @UniqueConstraint(columnNames = {"cart_id","product_id"}))
+@Table(name = "store_inventory", uniqueConstraints = @UniqueConstraint(columnNames = {"store_location_id","product_id"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class CartItem {
+public class StoreInventory {
 
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="cart_item_id")
+    @Column(name="store_inventory_id")
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional=false)
-    @JoinColumn(name="cart_id")
-    private Cart cart;
+    @JoinColumn(name="store_location_id")
+    private StoreLocation storeLocation;
 
     @ManyToOne(fetch = FetchType.LAZY, optional=false)
     @JoinColumn(name="product_id")
@@ -26,8 +26,5 @@ public class CartItem {
 
     @Column(nullable=false)
     private Integer quantity;
-
-    @Column(name="is_selected", nullable=false)
-    private Boolean selected = Boolean.TRUE;
 
 }

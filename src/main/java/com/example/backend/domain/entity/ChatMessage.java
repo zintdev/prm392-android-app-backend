@@ -1,31 +1,34 @@
 package com.example.backend.domain.entity;
-
+ 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import java.time.*;
+import java.math.BigDecimal;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "chat_messages", indexes = @Index(name = "idx_chat_user", columnList = "user_id"))
+@Table(name = "chat_messages")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ChatMessage {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "chat_message_id")
-  private Integer id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "user_id", nullable = false,
-              foreignKey = @ForeignKey(name = "fk_chat_user"))
-  private User user;
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="chat_message_id")
+    private Integer id;
 
-  @NotBlank
-  @Column(name = "message", nullable = false)
-  private String message;
+    @ManyToOne(fetch = FetchType.LAZY, optional=false)
+    @JoinColumn(name="user_id")
+    private User user;
 
-  @CreationTimestamp
-  @Column(name = "sent_at", nullable = false)
-  private OffsetDateTime sentAt;
+    @Column(columnDefinition="TEXT", nullable=false)
+    private String message;
+
+    @Column(name="sent_at", nullable=false)
+    private OffsetDateTime sentAt;
+
+    @PrePersist
+    public void prePersist() {{
+        if (sentAt == null) sentAt = OffsetDateTime.now();
+    }}
+
 }

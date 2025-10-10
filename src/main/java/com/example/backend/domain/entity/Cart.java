@@ -1,31 +1,40 @@
 package com.example.backend.domain.entity;
-
-import com.example.backend.domain.enums.CartStatus;
+ 
 import jakarta.persistence.*;
+import java.time.*;
+import java.math.BigDecimal;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "carts", indexes = @Index(name = "idx_cart_user", columnList = "user_id"))
+@Table(name = "carts")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Cart {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "cart_id")
-  private Integer id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "user_id", nullable = false,
-              foreignKey = @ForeignKey(name = "fk_cart_user"))
-  private User user;
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="cart_id")
+    private Integer id;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "status", nullable = false)
-  private CartStatus status = CartStatus.ACTIVE;
+    @ManyToOne(fetch = FetchType.LAZY, optional=false)
+    @JoinColumn(name="user_id")
+    private User user;
 
-  @CreationTimestamp
-  @Column(name = "created_at", nullable = false)
-  private OffsetDateTime createdAt;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(columnDefinition="cart_status", nullable=false)
+    private com.example.backend.domain.enums.CartStatus status;
+
+    @Column(name="created_at", nullable=false)
+    private OffsetDateTime createdAt;
+
+    @OneToMany(mappedBy="cart", cascade=CascadeType.ALL, orphanRemoval=true)
+    private java.util.List<CartItem> items = new java.util.ArrayList<>();
+
+    @PrePersist
+    public void prePersist() {{
+        if (createdAt == null) createdAt = OffsetDateTime.now();
+        if (status == null) status = com.example.backend.domain.enums.CartStatus.ACTIVE;
+    }}
+
 }

@@ -8,23 +8,23 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "artist_images", uniqueConstraints = @UniqueConstraint(columnNames = {"artist_id","sort_order"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Notification {
+public class ArtistImage {
 
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="notification_id")
+    @Column(name="image_id")
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional=false)
-    @JoinColumn(name="user_id")
-    private User user;
+    @JoinColumn(name="artist_id")
+    private Artist artist;
 
     @Column(columnDefinition="TEXT", nullable=false)
-    private String message;
+    private String url;
 
-    @Column(name="is_read", nullable=false)
-    private Boolean read;
+    @Column(name="sort_order", nullable=false)
+    private Integer sortOrder;
 
     @Column(name="created_at", nullable=false)
     private OffsetDateTime createdAt;
@@ -32,7 +32,7 @@ public class Notification {
     @PrePersist
     public void prePersist() {{
         if (createdAt == null) createdAt = OffsetDateTime.now();
-        if (read == null) read = Boolean.FALSE;
+        if (sortOrder == null) sortOrder = 0;
     }}
 
 }

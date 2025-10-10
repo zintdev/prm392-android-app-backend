@@ -1,61 +1,45 @@
 package com.example.backend.domain.entity;
-
+ 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import java.time.*;
+import java.math.BigDecimal;
 import lombok.*;
-
-
-import java.time.OffsetDateTime;
-
-import org.hibernate.annotations.JdbcType;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
-
-import com.example.backend.domain.enums.UserRole;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(
-    name = "users",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uq_users_username", columnNames = "username"),
-        @UniqueConstraint(name = "uq_users_email", columnNames = "email")
-})
+@Table(name = "users")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id") // INT GENERATED ALWAYS AS IDENTITY
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Integer id;
 
-    @NotBlank
-    @Size(max = 150)
-    @Column(name = "username", nullable = false, length = 150)
+    @Column(nullable=false, unique=true, length=150)
     private String username;
 
-    @NotBlank
-    @Email
-    @Size(max = 255)
-    @Column(name = "email", nullable = false, length = 255)
+    @Column(nullable=false, unique=true, length=255)
     private String email;
 
-    @NotBlank
-    @Size(max = 255)
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name="password_hash", nullable=false, length=255)
     private String passwordHash;
 
-    @Size(max = 20)
-    @Column(name = "phone_number", length = 20)
+    @Column(name="phone_number", length=20)
     private String phoneNumber;
 
-    // PostgreSQL enum user_role mapped as String; columnDefinition giữ đúng kiểu bên DB
     @Enumerated(EnumType.STRING)
-    @JdbcType(PostgreSQLEnumJdbcType.class)                 // ✅ báo cho Hibernate đây là Postgres ENUM
-    @Column(name = "role", nullable = false, columnDefinition = "user_role")  // ✅ đúng tên type ở DB
-    private UserRole role = UserRole.CUSTOMER;
+    @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(columnDefinition = "user_role", nullable=false)
+    private com.example.backend.domain.enums.UserRole role;
 
-    // DB tự set DEFAULT now(); để insertable=false, updatable=false dùng giá trị từ DB
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    @Column(name="created_at", nullable=false)
     private OffsetDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {{
+        if (createdAt == null) createdAt = OffsetDateTime.now();
+        if (role == null) role = com.example.backend.domain.enums.UserRole.CUSTOMER;
+    }}
+
 }

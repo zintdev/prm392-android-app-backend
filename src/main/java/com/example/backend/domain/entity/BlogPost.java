@@ -1,43 +1,48 @@
 package com.example.backend.domain.entity;
-
+ 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import java.time.*;
+import java.math.BigDecimal;
 import lombok.*;
-
-import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "blog_posts")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class BlogPost {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "blog_post_id")
-  private Integer id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "author_user_id", nullable = false,
-              foreignKey = @ForeignKey(name = "fk_blog_author"))
-  private User author;
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="blog_post_id")
+    private Integer id;
 
-  @NotBlank
-  @Column(name = "title", length = 255, nullable = false)
-  private String title;
+    @ManyToOne(fetch = FetchType.LAZY, optional=false)
+    @JoinColumn(name="author_user_id")
+    private User author;
 
-  @NotBlank
-  @Column(name = "slug", length = 255, nullable = false, unique = true)
-  private String slug;
+    @Column(nullable=false, length=255)
+    private String title;
 
+    @Column(nullable=false, length=255, unique=true)
+    private String slug;
 
-  @Column(name = "status", length = 20, nullable = false)
-  private String status = "DRAFT";
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(name="status", columnDefinition="blog_status", nullable=false)
+    private com.example.backend.domain.enums.BlogStatus status;
 
-  @Column(name = "content")
-  private String content;
+    @Column(columnDefinition="TEXT")
+    private String content;
 
-  @Column(name = "image_url")
-  private String imageUrl;
+    @Column(name="image_url", columnDefinition="TEXT")
+    private String imageUrl;
 
-  @Column(name = "published_at")
-  private OffsetDateTime publishedAt;
+    @Column(name="published_at")
+    private OffsetDateTime publishedAt;
+
+    @PrePersist
+    public void prePersist() {{
+        if (status == null) status = com.example.backend.domain.enums.BlogStatus.DRAFT;
+    }}
+
 }

@@ -1,27 +1,28 @@
 package com.example.backend.domain.entity;
-
+ 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-
+import java.time.*;
 import java.math.BigDecimal;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "store_locations")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class StoreLocation {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "store_location_id")
-  private Integer id;
 
-  @Column(name = "latitude", precision = 9, scale = 6, nullable = false)
-  private BigDecimal latitude;
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="store_location_id")
+    private Integer id;
 
-  @Column(name = "longitude", precision = 9, scale = 6, nullable = false)
-  private BigDecimal longitude;
+    @Column(precision=9, scale=6, nullable=false)
+    private BigDecimal latitude;
 
-  @NotBlank
-  @Column(name = "address", length = 255, nullable = false)
-  private String address;
+    @Column(precision=9, scale=6, nullable=false)
+    private BigDecimal longitude;
+
+    @Column(nullable=false, length=255)
+    private String address;
+
 }
