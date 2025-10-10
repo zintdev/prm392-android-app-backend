@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.domain.User;
+import com.example.backend.domain.entity.User;
+import com.example.backend.domain.enums.UserRole;
 import com.example.backend.dto.user.Request;
 import com.example.backend.dto.user.Response;
 import com.example.backend.exception.custom.UserAlreadyExistsException;
@@ -40,8 +41,7 @@ public class UserService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .address(request.getAddress())
-                .role(request.getRole() != null ? request.getRole() : "USER")
+                .role(UserRole.valueOf(request.getRole() != null ? request.getRole() : "USER"))
                 .build();
         
         User savedUser = userRepository.save(user);
@@ -93,8 +93,6 @@ public class UserService {
         existingUser.setUsername(request.getUsername());
         existingUser.setEmail(request.getEmail());
         existingUser.setPhoneNumber(request.getPhoneNumber());
-        existingUser.setAddress(request.getAddress());
-        
         // Chỉ cập nhật password nếu có trong request
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -102,7 +100,7 @@ public class UserService {
         
         // Cập nhật role nếu có trong request
         if (request.getRole() != null && !request.getRole().isEmpty()) {
-            existingUser.setRole(request.getRole());
+            existingUser.setRole(UserRole.valueOf(request.getRole()));
         }
         
         User updatedUser = userRepository.save(existingUser);
@@ -124,8 +122,7 @@ public class UserService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .address(user.getAddress())
-                .role(user.getRole())
+                .role(String.valueOf(user.getRole()))
                 .build();
     }
 }

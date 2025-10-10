@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
-import com.example.backend.domain.User;
+import com.example.backend.domain.entity.User;
+import com.example.backend.domain.enums.UserRole;
 import com.example.backend.dto.*;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.config.JwtUtil;
@@ -28,13 +29,12 @@ public class AuthService {
         u.setEmail(req.email.trim());
         u.setPasswordHash(encoder.encode(req.password));
         u.setPhoneNumber(req.phoneNumber);
-        u.setAddress(req.address);
-        u.setRole("USER");
+        u.setRole(UserRole.CUSTOMER);
 
         users.save(u);
 
         UserSummary s = new UserSummary();
-        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole();
+        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole().name();
         return s;
     }
 
@@ -45,12 +45,12 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
         if (!encoder.matches(req.password, u.getPasswordHash()))
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new IllegalArgumentException("Wrong password!");
 
-        String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole());
+        String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole().name());
 
         UserSummary s = new UserSummary();
-        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole();
+        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole().name();
 
         AuthResponse res = new AuthResponse();
         res.token = token; res.user = s;
