@@ -16,13 +16,17 @@ public class AuthService {
     private final JwtUtil jwt;
 
     public AuthService(UserRepository users, PasswordEncoder encoder, JwtUtil jwt) {
-        this.users = users; this.encoder = encoder; this.jwt = jwt;
+        this.users = users;
+        this.encoder = encoder;
+        this.jwt = jwt;
     }
 
     @Transactional
     public UserSummary register(RegisterRequest req) {
-        if (users.existsByUsernameIgnoreCase(req.username)) throw new IllegalArgumentException("Username already exists");
-        if (users.existsByEmailIgnoreCase(req.email)) throw new IllegalArgumentException("Email already exists");
+        if (users.existsByUsernameIgnoreCase(req.username))
+            throw new IllegalArgumentException("Username already exists");
+        if (users.existsByEmailIgnoreCase(req.email))
+            throw new IllegalArgumentException("Email already exists");
 
         User u = new User();
         u.setUsername(req.username.trim());
@@ -34,7 +38,10 @@ public class AuthService {
         users.save(u);
 
         UserSummary s = new UserSummary();
-        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole().name();
+        s.id = u.getId();
+        s.username = u.getUsername();
+        s.email = u.getEmail();
+        s.role = u.getRole().toString();
         return s;
     }
 
@@ -47,13 +54,18 @@ public class AuthService {
         if (!encoder.matches(req.password, u.getPasswordHash()))
             throw new IllegalArgumentException("Wrong password!");
 
-        String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole().name());
+        String token = jwt.generateToken(u.getId(), u.getUsername(), u.getRole().toString());
 
         UserSummary s = new UserSummary();
-        s.id = u.getId(); s.username = u.getUsername(); s.email = u.getEmail(); s.role = u.getRole().name();
+        s.id = u.getId();
+        s.username = u.getUsername();
+        s.email = u.getEmail();
+        s.role = u.getRole().toString();
+
 
         AuthResponse res = new AuthResponse();
-        res.token = token; res.user = s;
+        res.token = token;
+        res.user = s;
         return res;
     }
 }
