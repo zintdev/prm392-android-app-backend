@@ -1,4 +1,4 @@
-package com.example.backend.domain;
+package com.example.backend.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,7 +18,7 @@ public class Artist {
     private Integer id;
 
     @Column(name = "artist_name", nullable = false, length = 100)
-    private String name;
+    private String name; 
 
     @Column(name = "debut_year",nullable = false)
     private Integer debutyear;
