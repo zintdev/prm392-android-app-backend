@@ -1,11 +1,7 @@
 package com.example.backend.domain.entity;
  
 import jakarta.persistence.*;
-import java.time.*;
-import java.math.BigDecimal;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "publishers")
