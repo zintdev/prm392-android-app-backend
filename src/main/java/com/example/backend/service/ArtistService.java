@@ -1,8 +1,8 @@
 package com.example.backend.service;
 
 import com.example.backend.domain.entity.Artist;
-import com.example.backend.dto.artist.Request;
-import com.example.backend.dto.artist.Response;
+import com.example.backend.dto.artist.CreateArtistRequest;
+import com.example.backend.dto.artist.ArtistResponse;
 import com.example.backend.exception.custom.ArtistAlreadyExistsException;
 import com.example.backend.repository.ArtistRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class ArtistService {
     
     // CREATE
     @Transactional
-    public Response createArtist(Request request) {
+    public ArtistResponse createArtist(CreateArtistRequest request) {
         // Kiểm tra xem artist name đã tồn tại chưa
         if (artistRepository.findByArtistNameContainingIgnoreCase(request.getArtistName()).stream()
                 .anyMatch(artist -> artist.getArtistName().equalsIgnoreCase(request.getArtistName()))) {
@@ -48,14 +48,14 @@ public class ArtistService {
     }
     
     // READ - Get by ID
-    public Response getArtistById(Integer id) {
+    public ArtistResponse getArtistById(Integer id) {
         Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artist not found with id: " + id));
         return mapToResponse(artist);
     }
     
     // READ - Get all without pagination
-    public List<Response> getAllArtists() {
+    public List<ArtistResponse> getAllArtists() {
         List<Artist> artists = artistRepository.findAll();
         return artists.stream()
                 .map(this::mapToResponse)
@@ -63,7 +63,7 @@ public class ArtistService {
     }
     
     // READ - Search by name
-    public List<Response> searchArtistsByName(String name) {
+    public List<ArtistResponse> searchArtistsByName(String name) {
         List<Artist> artists = artistRepository.findByArtistNameContainingIgnoreCase(name);
         return artists.stream()
                 .map(this::mapToResponse)
@@ -71,7 +71,7 @@ public class ArtistService {
     }
     
     // READ - Get by artist type
-    public List<Response> getArtistsByType(String artistType) {
+    public List<ArtistResponse> getArtistsByType(String artistType) {
         List<Artist> artists = artistRepository.findByArtistType(artistType);
         return artists.stream()
                 .map(this::mapToResponse)
@@ -80,7 +80,7 @@ public class ArtistService {
     
     // UPDATE
     @Transactional
-    public Response updateArtist(Integer id, Request request) {
+    public ArtistResponse updateArtist(Integer id, CreateArtistRequest request) {
         // Kiểm tra xem artist name đã tồn tại chưa (trừ chính artist hiện tại)
         if (artistRepository.findByArtistNameContainingIgnoreCase(request.getArtistName()).stream()
                 .anyMatch(artist -> artist.getArtistName().equalsIgnoreCase(request.getArtistName()) 
@@ -115,8 +115,8 @@ public class ArtistService {
     }
     
     // Helper method to map Entity to Response DTO
-    private Response mapToResponse(Artist artist) {
-        return Response.builder()
+    private ArtistResponse mapToResponse(Artist artist) {
+        return ArtistResponse.builder()
                 .id(artist.getId())
                 .artistType(artist.getArtistType())
                 .artistName(artist.getArtistName())
