@@ -36,6 +36,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/publishers/**").permitAll()  // Cho phép truy cập Publisher APIs
+                .requestMatchers("/api/artists/**").permitAll()     // Cho phép truy cập Artist APIs
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
@@ -53,4 +54,5 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 }
