@@ -29,7 +29,7 @@ public class User {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "user_role", nullable=false)
     private com.example.backend.domain.enums.UserRole role;
 
@@ -37,9 +37,9 @@ public class User {
     private OffsetDateTime createdAt;
 
     @PrePersist
-    public void prePersist() {{
+    public void prePersist() {
         if (createdAt == null) createdAt = OffsetDateTime.now();
         if (role == null) role = com.example.backend.domain.enums.UserRole.CUSTOMER;
-    }}
+    }
 
 }
