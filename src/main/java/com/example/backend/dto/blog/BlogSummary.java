@@ -1,4 +1,4 @@
-package com.example.backend.dto;
+package com.example.backend.dto.blog;
 
 import com.example.backend.domain.enums.BlogStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;

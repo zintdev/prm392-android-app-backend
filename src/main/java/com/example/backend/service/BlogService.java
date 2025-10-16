@@ -1,8 +1,8 @@
 package com.example.backend.service;
 
 import com.example.backend.domain.entity.BlogPost;
-import com.example.backend.dto.BlogList;
-import com.example.backend.dto.BlogSummary;
+import com.example.backend.dto.blog.BlogList;
+import com.example.backend.dto.blog.BlogSummary;
 import com.example.backend.repository.BlogPostRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

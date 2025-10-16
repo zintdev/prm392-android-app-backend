@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.user.Request;
-import com.example.backend.dto.user.Response;
+import com.example.backend.dto.user.UserRequest;
+import com.example.backend.dto.user.UserResponse;
 import com.example.backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,8 +33,8 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "409", description = "Username or email already exists")
     })
-    public ResponseEntity<Response> createUser(@Valid @RequestBody Request request) {
-        Response response = userService.createUser(request);
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
+        UserResponse response = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
@@ -44,8 +44,8 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all users"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
-    public ResponseEntity<List<Response>> getAllUsers() {
-        List<Response> users = userService.getAllUsers();
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
     
@@ -56,9 +56,9 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
-    public ResponseEntity<Response> getUserById(
+    public ResponseEntity<UserResponse> getUserById(
             @Parameter(description = "User ID", required = true) @PathVariable Integer id) {
-        Response response = userService.getUserById(id);
+        UserResponse response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
     
@@ -69,9 +69,9 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
-    public ResponseEntity<Response> getUserByUsername(
+    public ResponseEntity<UserResponse> getUserByUsername(
             @Parameter(description = "Username", required = true) @PathVariable String username) {
-        Response response = userService.getUserByUsername(username);
+        UserResponse response = userService.getUserByUsername(username);
         return ResponseEntity.ok(response);
     }
     
@@ -84,10 +84,10 @@ public class UserController {
             @ApiResponse(responseCode = "409", description = "Username or email already exists"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
-    public ResponseEntity<Response> updateUser(
+    public ResponseEntity<UserResponse> updateUser(
             @Parameter(description = "User ID", required = true) @PathVariable Integer id,
-            @Valid @RequestBody Request request) {
-        Response response = userService.updateUser(id, request);
+            @Valid @RequestBody UserRequest request) {
+        UserResponse response = userService.updateUser(id, request);
         return ResponseEntity.ok(response);
     }
     

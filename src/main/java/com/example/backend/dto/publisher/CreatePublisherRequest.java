@@ -15,8 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(name = "PublisherRequest", description = "Publisher create/update request body")
-public class Request {
+public class CreatePublisherRequest {
     
     @NotBlank(message = "Publisher name cannot be blank")
     @Size(max = 100, message = "Publisher name must not exceed 100 characters")

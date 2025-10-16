@@ -1,8 +1,8 @@
 package com.example.backend.service;
 
 import com.example.backend.domain.entity.Publisher;
-import com.example.backend.dto.publisher.Request;
-import com.example.backend.dto.publisher.Response;
+import com.example.backend.dto.publisher.CreatePublisherRequest;
+import com.example.backend.dto.publisher.PublisherResponse;
 import com.example.backend.exception.custom.PublisherNotFoundException;
 import com.example.backend.exception.custom.PublisherAlreadyExistsException;
 import com.example.backend.repository.PublisherRepository;
@@ -24,7 +24,7 @@ public class PublisherService {
     /**
      * Tạo mới một publisher
      */
-    public Response createPublisher(Request request) {
+    public PublisherResponse createPublisher(CreatePublisherRequest request) {
         // Kiểm tra xem publisher name đã tồn tại chưa
         if (publisherRepository.findByNameContainingIgnoreCase(request.getName()).stream()
                 .anyMatch(p -> p.getName().equalsIgnoreCase(request.getName()))) {
@@ -48,7 +48,7 @@ public class PublisherService {
      * Lấy tất cả publishers
      */
     @Transactional(readOnly = true)
-    public List<Response> getAllPublishers() {
+    public List<PublisherResponse> getAllPublishers() {
         return publisherRepository.findAll().stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
@@ -58,7 +58,7 @@ public class PublisherService {
      * Lấy publisher theo ID
      */
     @Transactional(readOnly = true)
-    public Response getPublisherById(Integer id) {
+    public PublisherResponse getPublisherById(Integer id) {
         Publisher publisher = publisherRepository.findById(id)
                 .orElseThrow(() -> new PublisherNotFoundException(id));
         return convertToResponse(publisher);
@@ -67,7 +67,7 @@ public class PublisherService {
     /**
      * Cập nhật publisher
      */
-    public Response updatePublisher(Integer id, Request request) {
+    public PublisherResponse updatePublisher(Integer id, CreatePublisherRequest request) {
         Publisher publisher = publisherRepository.findById(id)
                 .orElseThrow(() -> new PublisherNotFoundException(id));
         
@@ -111,7 +111,7 @@ public class PublisherService {
      * Tìm kiếm publishers theo tên
      */
     @Transactional(readOnly = true)
-    public List<Response> searchPublishersByName(String name) {
+    public List<PublisherResponse> searchPublishersByName(String name) {
         return publisherRepository.findByNameContainingIgnoreCase(name).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
@@ -128,8 +128,8 @@ public class PublisherService {
     /**
      * Chuyển đổi từ Entity sang Response DTO
      */
-    private Response convertToResponse(Publisher publisher) {
-        return Response.builder()
+    private PublisherResponse convertToResponse(Publisher publisher) {
+        return PublisherResponse.builder()
                 .id(publisher.getId())
                 .name(publisher.getName())
                 .foundedYear(publisher.getFoundedYear())

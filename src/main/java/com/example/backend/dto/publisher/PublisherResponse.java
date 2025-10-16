@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(name = "PublisherResponse", description = "Publisher response body")
-public class Response {
+public class PublisherResponse {
     
     private Integer id;
     private String name;

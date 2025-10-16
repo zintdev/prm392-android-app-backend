@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.publisher.Request;
-import com.example.backend.dto.publisher.Response;
+import com.example.backend.dto.publisher.CreatePublisherRequest;
+import com.example.backend.dto.publisher.PublisherResponse;
 import com.example.backend.service.PublisherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,8 +34,8 @@ public class PublisherController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "409", description = "Publisher name already exists")
     })
-    public ResponseEntity<Response> createPublisher(@Valid @RequestBody Request request) {
-        Response response = publisherService.createPublisher(request);
+    public ResponseEntity<PublisherResponse> createPublisher(@Valid @RequestBody CreatePublisherRequest request) {
+        PublisherResponse response = publisherService.createPublisher(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
@@ -47,8 +47,8 @@ public class PublisherController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of publishers")
     })
-    public ResponseEntity<List<Response>> getAllPublishers() {
-        List<Response> publishers = publisherService.getAllPublishers();
+    public ResponseEntity<List<PublisherResponse>> getAllPublishers() {
+        List<PublisherResponse> publishers = publisherService.getAllPublishers();
         return ResponseEntity.ok(publishers);
     }
     
@@ -61,9 +61,9 @@ public class PublisherController {
             @ApiResponse(responseCode = "200", description = "Publisher found"),
             @ApiResponse(responseCode = "404", description = "Publisher not found")
     })
-    public ResponseEntity<Response> getPublisherById(
+    public ResponseEntity<PublisherResponse> getPublisherById(
             @Parameter(description = "Publisher ID") @PathVariable Integer id) {
-        Response publisher = publisherService.getPublisherById(id);
+        PublisherResponse publisher = publisherService.getPublisherById(id);
         return ResponseEntity.ok(publisher);
     }
     
@@ -77,10 +77,10 @@ public class PublisherController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "404", description = "Publisher not found")
     })
-    public ResponseEntity<Response> updatePublisher(
+    public ResponseEntity<PublisherResponse> updatePublisher(
             @Parameter(description = "Publisher ID") @PathVariable Integer id,
-            @Valid @RequestBody Request request) {
-        Response updatedPublisher = publisherService.updatePublisher(id, request);
+            @Valid @RequestBody CreatePublisherRequest request) {
+        PublisherResponse updatedPublisher = publisherService.updatePublisher(id, request);
         return ResponseEntity.ok(updatedPublisher);
     }
     
@@ -107,9 +107,9 @@ public class PublisherController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Search completed successfully")
     })
-    public ResponseEntity<List<Response>> searchPublishersByName(
+    public ResponseEntity<List<PublisherResponse>> searchPublishersByName(
             @Parameter(description = "Publisher name to search") @RequestParam String name) {
-        List<Response> publishers = publisherService.searchPublishersByName(name);
+        List<PublisherResponse> publishers = publisherService.searchPublishersByName(name);
         return ResponseEntity.ok(publishers);
     }
     

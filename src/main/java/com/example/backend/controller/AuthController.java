@@ -1,6 +1,10 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.*;
+import com.example.backend.dto.auth.AuthResponse;
+import com.example.backend.dto.auth.LoginRequest;
+import com.example.backend.dto.auth.RegisterRequest;
+import com.example.backend.dto.user.UserSummary;
 import com.example.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

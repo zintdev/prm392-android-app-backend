@@ -2,8 +2,8 @@ package com.example.backend.service;
 
 import com.example.backend.domain.entity.User;
 import com.example.backend.domain.enums.UserRole;
-import com.example.backend.dto.user.Request;
-import com.example.backend.dto.user.Response;
+import com.example.backend.dto.user.UserRequest;
+import com.example.backend.dto.user.UserResponse;
 import com.example.backend.exception.custom.UserAlreadyExistsException;
 import com.example.backend.exception.custom.UserNotFoundException;
 import com.example.backend.repository.UserRepository;
@@ -24,7 +24,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     // CREATE - Tạo user mới
-    public Response createUser(Request request) {
+    public UserResponse createUser(UserRequest request) {
         // Kiểm tra username đã tồn tại chưa
         if (userRepository.existsByUsernameIgnoreCase(request.getUsername())) {
             throw new UserAlreadyExistsException("Username already exists: " + request.getUsername());
@@ -50,7 +50,7 @@ public class UserService {
 
     // READ - Lấy tất cả users
     @Transactional(readOnly = true)
-    public List<Response> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -58,7 +58,7 @@ public class UserService {
 
     // READ - Lấy user theo ID
     @Transactional(readOnly = true)
-    public Response getUserById(Integer id) {
+    public UserResponse getUserById(Integer id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
         return mapToResponse(user);
@@ -66,14 +66,14 @@ public class UserService {
 
     // READ - Lấy user theo username
     @Transactional(readOnly = true)
-    public Response getUserByUsername(String username) {
+    public UserResponse getUserByUsername(String username) {
         User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found with username: " + username));
         return mapToResponse(user);
     }
 
     // UPDATE - Cập nhật user
-    public Response updateUser(Integer id, Request request) {
+    public UserResponse updateUser(Integer id, UserRequest request) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
@@ -123,8 +123,8 @@ public class UserService {
     }
 
     // Utility method để map User entity sang Response DTO
-    private Response mapToResponse(User user) {
-        return Response.builder()
+    private UserResponse mapToResponse(User user) {
+        return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())

@@ -1,6 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.BlogList;
+import com.example.backend.dto.blog.BlogList;
 import com.example.backend.service.BlogService;
 import org.springframework.web.bind.annotation.*;
 
