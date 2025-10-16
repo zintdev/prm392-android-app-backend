@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.artist.Request;
-import com.example.backend.dto.artist.Response;
+import com.example.backend.dto.artist.CreateArtistRequest;
+import com.example.backend.dto.artist.ArtistResponse;
 import com.example.backend.service.ArtistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,8 +34,8 @@ public class ArtistController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "409", description = "Artist name already exists")
     })
-    public ResponseEntity<Response> createArtist(@Valid @RequestBody Request request) {
-        Response response = artistService.createArtist(request);
+    public ResponseEntity<ArtistResponse> createArtist(@Valid @RequestBody CreateArtistRequest request) {
+        ArtistResponse response = artistService.createArtist(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
@@ -47,8 +47,8 @@ public class ArtistController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of artists")
     })
-    public ResponseEntity<List<Response>> getAllArtists() {
-        List<Response> artists = artistService.getAllArtists();
+    public ResponseEntity<List<ArtistResponse>> getAllArtists() {
+        List<ArtistResponse> artists = artistService.getAllArtists();
         return ResponseEntity.ok(artists);
     }
     
@@ -61,9 +61,9 @@ public class ArtistController {
             @ApiResponse(responseCode = "200", description = "Artist found"),
             @ApiResponse(responseCode = "404", description = "Artist not found")
     })
-    public ResponseEntity<Response> getArtistById(
+    public ResponseEntity<ArtistResponse> getArtistById(
             @Parameter(description = "Artist ID") @PathVariable Integer id) {
-        Response artist = artistService.getArtistById(id);
+        ArtistResponse artist = artistService.getArtistById(id);
         return ResponseEntity.ok(artist);
     }
     
@@ -77,10 +77,10 @@ public class ArtistController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "404", description = "Artist not found")
     })
-    public ResponseEntity<Response> updateArtist(
+    public ResponseEntity<ArtistResponse> updateArtist(
             @Parameter(description = "Artist ID") @PathVariable Integer id,
-            @Valid @RequestBody Request request) {
-        Response updatedArtist = artistService.updateArtist(id, request);
+            @Valid @RequestBody CreateArtistRequest request) {
+        ArtistResponse updatedArtist = artistService.updateArtist(id, request);
         return ResponseEntity.ok(updatedArtist);
     }
     
@@ -107,9 +107,9 @@ public class ArtistController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Search completed successfully")
     })
-    public ResponseEntity<List<Response>> searchArtistsByName(
+    public ResponseEntity<List<ArtistResponse>> searchArtistsByName(
             @Parameter(description = "Artist name to search") @RequestParam String name) {
-        List<Response> artists = artistService.searchArtistsByName(name);
+        List<ArtistResponse> artists = artistService.searchArtistsByName(name);
         return ResponseEntity.ok(artists);
     }
     
@@ -121,9 +121,9 @@ public class ArtistController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Artists found by type")
     })
-    public ResponseEntity<List<Response>> getArtistsByType(
+    public ResponseEntity<List<ArtistResponse>> getArtistsByType(
             @Parameter(description = "Artist type") @PathVariable String artistType) {
-        List<Response> artists = artistService.getArtistsByType(artistType);
+        List<ArtistResponse> artists = artistService.getArtistsByType(artistType);
         return ResponseEntity.ok(artists);
     }
     
