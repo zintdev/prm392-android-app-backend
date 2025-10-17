@@ -7,27 +7,30 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-@Entity
-@Table(name = "cart_items", uniqueConstraints = @UniqueConstraint(columnNames = {"cart_id","product_id"}))
+@Entity @Table(name="cart_items")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CartItem {
+  @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+  @Column(name="cart_item_id") private Integer id;
 
-    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="cart_item_id")
-    private Integer id;
+  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="cart_id", nullable=false)
+  private Cart cart;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional=false)
-    @JoinColumn(name="cart_id")
-    private Cart cart;
+  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="product_id", nullable=false)
+  private Product product;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional=false)
-    @JoinColumn(name="product_id")
-    private Product product;
+  @Column(name="quantity", nullable=false) private Integer quantity;
 
-    @Column(nullable=false)
-    private Integer quantity;
+  @Column(name="is_selected", nullable=false) private boolean selected = true;
 
-    @Column(name="is_selected", nullable=false)
-    private Boolean selected = Boolean.TRUE;
+  // NEW snapshot
+  @Column(name="unit_price", nullable=false, precision=12, scale=2)
+  private BigDecimal unitPrice;
 
+  @Column(name="tax_rate", nullable=false, precision=5, scale=2)
+  private BigDecimal taxRate = BigDecimal.ZERO;
+
+@Column(name="currency_code", nullable=false, length=3, columnDefinition = "char(3)")
+private String currencyCode = "VND";
 }
+

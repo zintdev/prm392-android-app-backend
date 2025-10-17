@@ -6,63 +6,48 @@ import java.math.BigDecimal;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import java.util.*;
+import com.example.backend.domain.enums.*;
 
-@Entity
-@Table(name = "orders")
+@Entity @Table(name="orders")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Order {
+  @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+  @Column(name="order_id") private Integer id;
 
-    @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="order_id")
-    private Integer id;
+  @ManyToOne(fetch=FetchType.LAZY) 
+  @JoinColumn(name="user_id", nullable=false)
+  private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional=false)
-    @JoinColumn(name="user_id")
-    private User user;
+  @Enumerated(EnumType.STRING) 
+  @Column(name="order_status", nullable=false)
+  private OrderStatus orderStatus;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="cart_id")
-    private Cart cart; // nullable
+  @Enumerated(EnumType.STRING) 
+  @Column(name="shipment_method", nullable=false)
+  private ShipmentMethod shipmentMethod;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.OTHER)
-    @Column(name="order_status", columnDefinition="order_status", nullable=false)
-    private com.example.backend.domain.enums.OrderStatus orderStatus;
+  @Column(name="order_date", nullable=false) 
+  private OffsetDateTime orderDate;
 
-    @Column(name="order_date", nullable=false)
-    private OffsetDateTime orderDate;
+  private String shippingFullName; 
+  private String shippingPhone;
+  @Column(name="shipping_address_line1") private String shippingAddressLine1;
+  @Column(name="shipping_address_line2") private String shippingAddressLine2;
+  @Column(name="shipping_city_state")    private String shippingCityState;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.OTHER)
-    @Column(name="shipment_method", columnDefinition="shipment_method", nullable=false)
-    private com.example.backend.domain.enums.ShipmentMethod shipmentMethod;
+  // totals
+  @Column(name="subtotal",     nullable=false, precision=12, scale=2)
+  private BigDecimal subtotal = BigDecimal.ZERO;
+  @Column(name="tax_total",    nullable=false, precision=12, scale=2)
+  private BigDecimal taxTotal = BigDecimal.ZERO;
+  @Column(name="shipping_fee", nullable=false, precision=12, scale=2)
+  private BigDecimal shippingFee = BigDecimal.ZERO;
+  @Column(name="grand_total",  nullable=false, precision=12, scale=2)
+  private BigDecimal grandTotal = BigDecimal.ZERO;
 
-    @Column(name="shipping_full_name", length=150)
-    private String shippingFullName;
+  @OneToMany(mappedBy="order", cascade=CascadeType.ALL, orphanRemoval=true)
+  private List<OrderItem> items = new ArrayList<>();
 
-    @Column(name="shipping_phone", length=20)
-    private String shippingPhone;
-
-    @Column(name="shipping_address_line1", length=255)
-    private String shippingAddressLine1;
-
-    @Column(name="shipping_address_line2", length=255)
-    private String shippingAddressLine2;
-
-    @Column(name="shipping_city_state", length=255)
-    private String shippingCityState;
-
-    @OneToOne(mappedBy="order", cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.LAZY)
-    private Payment payment;
-
-    @OneToMany(mappedBy="order", cascade=CascadeType.ALL, orphanRemoval=true)
-    private java.util.List<OrderItem> items = new java.util.ArrayList<>();
-
-    @PrePersist
-    public void prePersist() {{
-        if (orderDate == null) orderDate = OffsetDateTime.now();
-        if (orderStatus == null) orderStatus = com.example.backend.domain.enums.OrderStatus.PENDING;
-        if (shipmentMethod == null) shipmentMethod = com.example.backend.domain.enums.ShipmentMethod.DELIVERY;
-    }}
-
+  @PrePersist void pre() { if (orderDate==null) orderDate = OffsetDateTime.now(); }
 }
