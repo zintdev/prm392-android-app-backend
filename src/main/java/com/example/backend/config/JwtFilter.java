@@ -24,11 +24,15 @@ public class JwtFilter implements Filter {
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             try {
-                Claims c = jwt.parse(token);
-                String username = c.get("username", String.class);
+                Claims c = jwt.parse(token); 
+                String userId = c.get("userId", String.class);
+                if (userId == null) {
+                    userId = c.getSubject(); // chính là "sub"
+                }
+             // String username = c.get("username", String.class);
                 String role = c.get("role", String.class);
                 var auth = new UsernamePasswordAuthenticationToken(
-                        username, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                        userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (Exception ignored) { }
         }

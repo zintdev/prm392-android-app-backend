@@ -7,30 +7,40 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-@Entity @Table(name="cart_items")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity
+@Table(name = "cart_items",
+       uniqueConstraints = @UniqueConstraint(columnNames = {"cart_id","product_id"}))
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
 public class CartItem {
-  @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
-  @Column(name="cart_item_id") private Integer id;
 
-  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="cart_id", nullable=false)
-  private Cart cart;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "cart_item_id")
+    private Integer id;
 
-  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="product_id", nullable=false)
-  private Product product;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cart_id", nullable = false)
+    private Cart cart;
 
-  @Column(name="quantity", nullable=false) private Integer quantity;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-  @Column(name="is_selected", nullable=false) private boolean selected = true;
+    @Column(name = "quantity", nullable = false)
+    private Integer quantity;
 
-  // NEW snapshot
-  @Column(name="unit_price", nullable=false, precision=12, scale=2)
-  private BigDecimal unitPrice;
+    @Column(name = "unit_price", precision = 12, scale = 2, nullable = false)
+    private BigDecimal unitPrice;
 
-  @Column(name="tax_rate", nullable=false, precision=5, scale=2)
-  private BigDecimal taxRate = BigDecimal.ZERO;
+    @Column(name = "tax_rate", precision = 5, scale = 2, nullable = false)
+    private BigDecimal taxRate;
 
-@Column(name="currency_code", nullable=false, length=3, columnDefinition = "char(3)")
-private String currencyCode = "VND";
+    @Column(name = "currency_code", length = 3, nullable = false)
+    private String currencyCode;
+
+    @Column(name = "is_selected", nullable = false)
+    private boolean selected;
 }
+
 

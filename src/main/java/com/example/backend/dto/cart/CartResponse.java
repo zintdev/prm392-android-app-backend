@@ -2,18 +2,34 @@ package com.example.backend.dto.cart;
 
 import java.math.BigDecimal;
 import java.util.List;
+import lombok.*;
 
-import lombok.Builder;
-import lombok.Data;
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CartResponse {
+    private Integer cartId;
+    private String status;
+    private BigDecimal subtotal;
+    private BigDecimal taxTotal;
+    private BigDecimal shippingFee;
+    private BigDecimal grandTotal;
+    private List<Item> items;
 
-@Data @Builder public class CartResponse {
-  private Integer cartId;
-  private List<Item> items;
-  private BigDecimal subtotal, taxTotal, shippingFee, grandTotal;
-
-  @Data @Builder public static class Item {
-    private Integer cartItemId, productId; private String productName;
-    private String imageUrl;
-    private BigDecimal unitPrice; private int quantity; private boolean selected;
-  }
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Item {         
+        private Integer cartItemId;
+        private Integer productId;
+        private String  productName;
+        private String  imageUrl;
+        private BigDecimal unitPrice;
+        private Integer quantity;
+        private boolean selected;
+        private String  currency;      
+        private BigDecimal taxRate;    
+    }
 }

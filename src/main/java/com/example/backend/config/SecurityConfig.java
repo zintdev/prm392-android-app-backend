@@ -32,11 +32,12 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/swagger-ui/**",
                     "/api-docs/**",
-                    "/api/cors"         // endpoint test nhanh
+                    "/**"         // endpoint test nhanh
                 ).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/publishers/**").permitAll()  // Cho phép truy cập Publisher APIs
-                .requestMatchers("/api/artists/**").permitAll()     // Cho phép truy cập Artist APIs
+                .requestMatchers("/api/artists/**").permitAll() 
+                .requestMatchers("/api/cart/**").permitAll()    // Cho phép truy cập Artist APIs
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
