@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -34,11 +35,35 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // READ ALL
+    // READ ALL or FILTERED
     @GetMapping
-    @Operation(summary = "List all products")
-    public ResponseEntity<List<Response>> list() {
-        return ResponseEntity.ok(productService.getAll());
+    @Operation(summary = "List products (optionally filtered) priceSort: asc|desc|low|low_to_high|up|desc|high|high_to_low|down")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "404", description = "Not Found")
+    })
+    public ResponseEntity<?> list(
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "publisherId", required = false) Integer publisherId,
+            @RequestParam(value = "artistId", required = false) Integer artistId,
+            @RequestParam(value = "priceSort", required = false) String priceSort, // asc|desc
+            @RequestParam(value = "releaseYearFrom", required = false) Integer releaseYearFrom,
+            @RequestParam(value = "releaseYearTo", required = false) Integer releaseYearTo,
+            @RequestParam(value = "priceMin", required = false) java.math.BigDecimal priceMin,
+            @RequestParam(value = "priceMax", required = false) java.math.BigDecimal priceMax
+    ) {
+        if (categoryId == null && publisherId == null && artistId == null && priceSort == null && releaseYearFrom == null && releaseYearTo == null && priceMin == null && priceMax == null) {
+            return ResponseEntity.ok(productService.getAll());
+        }
+        List<Response> results = productService.filter(categoryId, publisherId, artistId, priceSort, releaseYearFrom, releaseYearTo, priceMin, priceMax);
+        if (results.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "status", 404,
+                            "message", "No products matched filters"
+                    ));
+        }
+        return ResponseEntity.ok(results);
     }
 
     // READ ONE

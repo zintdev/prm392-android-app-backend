@@ -3,14 +3,17 @@ package com.example.backend.service;
 import com.example.backend.domain.entity.*;
 import com.example.backend.dto.product.*;
 import com.example.backend.exception.custom.ProductAlreadyExistsException;
-import com.example.backend.exception.custom.PublisherAlreadyExistsException;
 import com.example.backend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -58,6 +61,60 @@ public class ProductService {
     public List<Response> getAll() {
         return productRepository.findAll()
                 .stream().map(this::mapToResponse).toList();
+    }
+
+    // FILTER
+    public List<Response> filter(Integer categoryId,
+                                 Integer publisherId,
+                                 Integer artistId,
+                                 String priceSort,
+                                 Integer releaseYearFrom,
+                                 Integer releaseYearTo,
+                                 BigDecimal priceMin,
+                                 BigDecimal priceMax) {
+
+        Specification<Product> spec = (root, query, cb) -> cb.conjunction();
+
+        if (categoryId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.join("category").get("id"), categoryId));
+        }
+        
+        if (publisherId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.join("publisher").get("id"), publisherId));
+        }
+
+        if (artistId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.join("artist").get("id"), artistId));
+        }
+
+        if (priceMin != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("price"), priceMin));
+        }
+        if (priceMax != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("price"), priceMax));
+        }
+
+        if (releaseYearFrom != null || releaseYearTo != null) {
+            final int fromYear = releaseYearFrom != null ? releaseYearFrom : 0;
+            final int toYear = releaseYearTo != null ? releaseYearTo : 9999;
+            final LocalDate fromDate = LocalDate.of(Math.max(0, fromYear), 1, 1);
+            final LocalDate toDate = LocalDate.of(Math.min(9999, toYear), 12, 31);
+            spec = spec.and((root, query, cb) -> cb.between(root.get("releaseDate"), fromDate, toDate));
+        }
+
+        Sort sort = Sort.unsorted();
+        if (priceSort != null) {
+            String normalized = priceSort.trim().toLowerCase();
+            if (normalized.equals("asc") || normalized.equals("low") || normalized.equals("low_to_high") || normalized.equals("up")) {
+                sort = Sort.by(Sort.Direction.ASC, "price");
+            } else if (normalized.equals("desc") || normalized.equals("high") || normalized.equals("high_to_low") || normalized.equals("down")) {
+                sort = Sort.by(Sort.Direction.DESC, "price");
+            }
+        }
+
+        return productRepository.findAll(spec, sort).stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     // READ ONE

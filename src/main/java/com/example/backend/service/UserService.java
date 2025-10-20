@@ -90,24 +90,21 @@ public class UserService {
         }
 
         // Cập nhật thông tin user
-        existingUser.setUsername(request.getUsername());
-        existingUser.setEmail(request.getEmail());
-        existingUser.setPhoneNumber(request.getPhoneNumber());
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            existingUser.setUsername(request.getUsername());
+        }
+
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            existingUser.setEmail(request.getEmail());
+        }
+
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
+            existingUser.setPhoneNumber(request.getPhoneNumber());
+        }
 
         // Chỉ cập nhật password nếu có trong request
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
-
-        // Cập nhật role nếu có trong request
-        if (request.getRole() != null && !request.getRole().isEmpty()) {
-            existingUser.setRole(UserRole.valueOf(request.getRole()));
-            try {
-                existingUser.setRole(UserRole.valueOf(request.getRole().toUpperCase())); // <-- chuyển String -> enum
-            } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Invalid role: " + request.getRole() +
-                        " (allowed: ADMIN, STAFF, CUSTOMER)");
-            }
         }
 
         User updatedUser = userRepository.save(existingUser);
