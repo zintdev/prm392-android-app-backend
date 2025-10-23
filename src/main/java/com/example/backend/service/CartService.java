@@ -117,9 +117,8 @@ public class CartService {
 
     // Nếu client gửi qty -> xử lý theo kiểu "gộp" (requested = current + qty)
     if (qty != null) {
-      if (qty <= 0) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be >= 1");
-      }
+
+      
 
       // Tổng tồn kho hiện có (dùng cùng repo như addOrUpdateItem)
       Integer available = productRepository.findQuantityById(p.getId());
