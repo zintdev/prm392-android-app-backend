@@ -64,7 +64,8 @@ public class ProductService {
     }
 
     // FILTER
-    public List<Response> filter(Integer categoryId,
+    public List<Response>  filter(String name,
+                                 Integer categoryId,
                                  Integer publisherId,
                                  Integer artistId,
                                  String priceSort,
@@ -74,6 +75,10 @@ public class ProductService {
                                  BigDecimal priceMax) {
 
         Specification<Product> spec = (root, query, cb) -> cb.conjunction();
+        if (name != null && !name.trim().isEmpty()) {
+            spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+        }
+
 
         if (categoryId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.join("category").get("id"), categoryId));
