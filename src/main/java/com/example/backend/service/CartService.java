@@ -98,44 +98,66 @@ public class CartService {
   }
 
   public CartResponse updateItem(int userId, int itemId, Integer qty, Boolean isSelected) {
-    CartItem it = cartItemRepository.findById(itemId)
+    // Lấy cart ACTIVE của user (hoặc tạo nếu không có)
+    Cart cart = getOrCreateActive(userId);
+
+    // Lấy item theo itemId; đảm bảo item thuộc cart của user
+    CartItem item = cartItemRepository.findById(itemId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cart item not found"));
 
-    if (!it.getCart().getUser().getId().equals(userId))
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your cart item");
+    if (!item.getCart().getId().equals(cart.getId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cart item does not belong to your active cart");
+    }
 
-    // if (qty != null) {
-    //   if (qty < 1)
-    //     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be >= 1");
+    // Lấy product từ item
+    Product p = item.getProduct();
+    if (p == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found for this cart item");
+    }
 
-    //   Integer available = storeInventoryRepository.sumQuantityByProductId(it.getProduct().getId());
-    //   if (available == null)
-    //     available = 0;
+    // Nếu client gửi qty -> xử lý theo kiểu "gộp" (requested = current + qty)
+    if (qty != null) {
+      if (qty <= 0) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be >= 1");
+      }
 
-    //   if (available == 0) {
-    //     // hết hàng: xóa item luôn
-    //     int cartId = it.getCart().getId();
-    //     cartItemRepository.delete(it);
-    //     em.flush();
-    //     applyShippingRuleAndRecalc(cartId);
-    //     Cart c = cartRepo.findById(cartId).orElseThrow();
-    //     em.refresh(c);
-    //     return map(c);
-    //   }
+      // Tổng tồn kho hiện có (dùng cùng repo như addOrUpdateItem)
+      Integer available = productRepository.findQuantityById(p.getId());
+      if (available == null) available = 0;
 
-    //   int finalQty = Math.min(qty, available);
-    //   it.setQuantity(finalQty);
-    // }
+      int currentQty = (item.getQuantity() == null ? 0 : item.getQuantity());
+      int requestedQty = currentQty + qty;
 
-    if (isSelected != null)
-      it.setSelected(isSelected);
+      if (available == 0) {
+        // Hết hàng: xóa item nếu có
+        cartItemRepository.delete(item);
+        em.flush();
+        applyShippingRuleAndRecalc(cart.getId());
+        em.refresh(cart);
+        return map(cart);
+      }
 
-    cartItemRepository.save(it);
+      int finalQty = Math.min(requestedQty, available);
+      if (finalQty != requestedQty) {
+        // Có điều chỉnh do tồn kho (nên log nếu cần)
+        // logger.info("Requested qty {} reduced to {} because available={}", requestedQty, finalQty, available);
+      }
+      item.setQuantity(finalQty);
+    }
+
+    // Cập nhật isSelected (nếu có)
+    if (isSelected != null) {
+      item.setSelected(isSelected);
+    }
+
+    // Lưu và recalc totals
+    cartItemRepository.save(item);
     em.flush();
-    applyShippingRuleAndRecalc(it.getCart().getId());
-    em.refresh(it.getCart());
-    return map(it.getCart());
-  }
+    applyShippingRuleAndRecalc(cart.getId());
+    em.refresh(cart);
+
+    return map(cart);
+}
 
   public CartResponse removeItem(int userId, int itemId) {
     CartItem it = cartItemRepository.findById(itemId)
