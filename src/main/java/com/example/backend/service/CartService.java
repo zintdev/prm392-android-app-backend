@@ -104,28 +104,28 @@ public class CartService {
     if (!it.getCart().getUser().getId().equals(userId))
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your cart item");
 
-    if (qty != null) {
-      if (qty < 1)
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be >= 1");
+    // if (qty != null) {
+    //   if (qty < 1)
+    //     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be >= 1");
 
-      Integer available = storeInventoryRepository.sumQuantityByProductId(it.getProduct().getId());
-      if (available == null)
-        available = 0;
+    //   Integer available = storeInventoryRepository.sumQuantityByProductId(it.getProduct().getId());
+    //   if (available == null)
+    //     available = 0;
 
-      if (available == 0) {
-        // hết hàng: xóa item luôn
-        int cartId = it.getCart().getId();
-        cartItemRepository.delete(it);
-        em.flush();
-        applyShippingRuleAndRecalc(cartId);
-        Cart c = cartRepo.findById(cartId).orElseThrow();
-        em.refresh(c);
-        return map(c);
-      }
+    //   if (available == 0) {
+    //     // hết hàng: xóa item luôn
+    //     int cartId = it.getCart().getId();
+    //     cartItemRepository.delete(it);
+    //     em.flush();
+    //     applyShippingRuleAndRecalc(cartId);
+    //     Cart c = cartRepo.findById(cartId).orElseThrow();
+    //     em.refresh(c);
+    //     return map(c);
+    //   }
 
-      int finalQty = Math.min(qty, available);
-      it.setQuantity(finalQty);
-    }
+    //   int finalQty = Math.min(qty, available);
+    //   it.setQuantity(finalQty);
+    // }
 
     if (isSelected != null)
       it.setSelected(isSelected);
