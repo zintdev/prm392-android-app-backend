@@ -1,9 +1,7 @@
 package com.example.backend.dto.chat;
 
 import java.time.Instant;
-
 import com.example.backend.domain.entity.Message;
-
 import lombok.*;
 
 @Data
@@ -13,13 +11,15 @@ import lombok.*;
 @Getter
 @Setter
 public class MessageDto {
-    private Integer id; // <-- THAY ĐỔI
-    private Integer conversationId; // <-- THAY ĐỔI
-    private Integer senderId; // <-- THAY ĐỔI
+    private Integer id;
+    private Integer conversationId;
+    private Integer senderId;
     private Message.MessageType messageType;
     private String content;
-    private Instant createdAt;
-    private Instant readAt;
+
+    // THAY ĐỔI: Instant -> Long
+    private Long createdAt;
+    private Long readAt;
 
     public static MessageDto fromEntity(Message message) {
         MessageDto dto = new MessageDto();
@@ -28,8 +28,15 @@ public class MessageDto {
         dto.setSenderId(message.getSenderId());
         dto.setMessageType(message.getMessageType());
         dto.setContent(message.getContent());
-        dto.setCreatedAt(message.getCreatedAt());
-        dto.setReadAt(message.getReadAt());
+
+        // THAY ĐỔI: Chuyển Instant sang Long (miligiây)
+        if (message.getCreatedAt() != null) {
+            dto.setCreatedAt(message.getCreatedAt().toEpochMilli());
+        }
+        if (message.getReadAt() != null) {
+            dto.setReadAt(message.getReadAt().toEpochMilli());
+        }
+        
         return dto;
     }
 }

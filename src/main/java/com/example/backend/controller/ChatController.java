@@ -9,6 +9,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 // <-- SỬA LỖI: Xóa import @RequestBody sai của Swagger
 import org.springframework.web.bind.annotation.RequestBody; // <-- SỬA LỖI: Import đúng @RequestBody của Spring
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.backend.dto.chat.ConversationSummaryDto;
 import com.example.backend.dto.chat.MessageDto;
 import com.example.backend.dto.chat.ReadReceiptRequest;
 import com.example.backend.dto.chat.SendMessageRequest;
@@ -67,10 +72,10 @@ public class ChatController {
     }
 
     @GetMapping("/history/{conversationId}")
-    public ResponseEntity<List<MessageDto>> getHistory(@PathVariable Integer conversationId) {
-        // TODO: Nên check quyền xem user hiện tại có trong conversationId này không
-        // Integer currentUserId = resolveUserId(httpRequest); // (Thêm httpRequest nếu cần check)
-        return ResponseEntity.ok(chatService.getMessageHistory(conversationId));
+    public ResponseEntity<List<MessageDto>> getHistory(@PathVariable("conversationId") Integer conversationId, HttpServletRequest httpRequest) {
+        Integer currentUserId = resolveUserId(httpRequest);
+        List<MessageDto> history = chatService.getMessageHistory(currentUserId, conversationId);
+        return ResponseEntity.ok(history);
     }
 
     @PostMapping("/typing")
@@ -152,4 +157,30 @@ public class ChatController {
         throw new org.springframework.web.server.ResponseStatusException(
                 HttpStatus.UNAUTHORIZED, "Unauthenticated");
     }
+
+    
+     @GetMapping
+public ResponseEntity<Page<ConversationSummaryDto>> getAllConversations(
+        @RequestParam(name = "page", defaultValue = "0") int page,
+        @RequestParam(name = "size", defaultValue = "20") int size,
+        @RequestParam(name = "sort", defaultValue = "createdAt,desc") String[] sort // simple support
+) {
+    Sort sortObj = Sort.by(Sort.Order.desc("createdAt")); // default
+    try {
+        if (sort != null && sort.length > 0) {
+            String[] parts = sort[0].split(",");
+            if (parts.length == 2) {
+                sortObj = Sort.by("asc".equalsIgnoreCase(parts[1]) ? Sort.Direction.ASC : Sort.Direction.DESC, parts[0]);
+            } else {
+                sortObj = Sort.by(parts[0]);
+            }
+        }
+    } catch (Exception e) {
+        // fallback to default
+    }
+    Pageable pageable = PageRequest.of(page, size, sortObj);
+    Page<ConversationSummaryDto> resp = chatService.getAllConversationsForAdmin(pageable);
+    return ResponseEntity.ok(resp);
 }
+}
+

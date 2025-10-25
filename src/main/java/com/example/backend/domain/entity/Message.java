@@ -1,45 +1,45 @@
 package com.example.backend.domain.entity;
 
 import jakarta.persistence.*;
-
 import java.time.Instant;
 import lombok.*;
 
 @Entity
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @Table(name = "messages")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Message {
 
-    public enum MessageType {
-        TEXT, IMAGE
-    }
+    public enum MessageType { TEXT, IMAGE }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id; // <-- THAY ĐỔI: Long -> Integer
+    private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "conversation_id", nullable = false)
     private Conversation conversation;
 
-    @Column(nullable = false)
-    private Integer senderId; // <-- THAY ĐỔI: Long -> Integer (Khớp với users.user_id)
+    @Column(name = "sender_id", nullable = false)
+    private Integer senderId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "message_type", nullable = false, length = 20)
     private MessageType messageType = MessageType.TEXT;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(columnDefinition = "TIMESTAMPTZ not null default now()")
-    private Instant createdAt = Instant.now();
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-    @Column(columnDefinition = "TIMESTAMPTZ")
+    @Column(name = "read_at")
     private Instant readAt;
-    
-    // Getters and setters...
-    
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) this.createdAt = Instant.now();
+    }
+
     public Message(Conversation conversation, Integer senderId, MessageType messageType, String content) {
         this.conversation = conversation;
         this.senderId = senderId;
