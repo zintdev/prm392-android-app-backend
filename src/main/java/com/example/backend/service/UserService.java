@@ -4,6 +4,7 @@ import com.example.backend.domain.entity.User;
 import com.example.backend.domain.enums.UserRole;
 import com.example.backend.dto.user.UserRequest;
 import com.example.backend.dto.user.UserResponse;
+import com.example.backend.dto.user.UserUpdateRequest;
 import com.example.backend.exception.custom.UserAlreadyExistsException;
 import com.example.backend.exception.custom.UserNotFoundException;
 import com.example.backend.repository.UserRepository;
@@ -41,7 +42,8 @@ public class UserService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .role(UserRole.valueOf(request.getRole() != null ? request.getRole() : "USER"))
+                .role(request.getRole() != null ?
+                        UserRole.valueOf(request.getRole().toString().toUpperCase()) : UserRole.CUSTOMER)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -51,10 +53,11 @@ public class UserService {
     // READ - Lấy tất cả users
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+        return userRepository.findByRoleNot(UserRole.ADMIN).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
 
     // READ - Lấy user theo ID
     @Transactional(readOnly = true)
@@ -73,7 +76,7 @@ public class UserService {
     }
 
     // UPDATE - Cập nhật user
-    public UserResponse updateUser(Integer id, UserRequest request) {
+    public UserResponse updateUser(Integer id, UserUpdateRequest request) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
@@ -93,6 +96,7 @@ public class UserService {
         if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
             existingUser.setUsername(request.getUsername());
         }
+
 
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
             existingUser.setEmail(request.getEmail());
