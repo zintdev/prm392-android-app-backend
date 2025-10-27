@@ -106,8 +106,18 @@ public class UserService {
             existingUser.setPhoneNumber(request.getPhoneNumber());
         }
 
-        // Chỉ cập nhật password nếu có trong request
+        // ✅ Kiểm tra mật khẩu cũ trước khi đổi sang mật khẩu mới
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            if (request.getOldPassword() == null || request.getOldPassword().isEmpty()) {
+                throw new IllegalArgumentException("Old password is required to update password.");
+            }
+
+            // So sánh mật khẩu cũ với hash trong DB
+            if (!passwordEncoder.matches(request.getOldPassword(), existingUser.getPasswordHash())) {
+                throw new IllegalArgumentException("Old password is incorrect.");
+            }
+
+            // Nếu đúng thì mã hóa và lưu mật khẩu mới
             existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
 

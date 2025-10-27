@@ -22,7 +22,10 @@ public class UserUpdateRequest {
     @Email(message = "Email should be valid")
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
-    
+
+    @Size(min = 6, message = "Old password must be at least 6 characters")
+    private String oldPassword;
+
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
     

@@ -1,10 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.domain.entity.Cart;
-import com.example.backend.domain.entity.CartItem;
-import com.example.backend.domain.entity.Order;
-import com.example.backend.domain.entity.OrderItem;
-import com.example.backend.domain.entity.User;
+import com.example.backend.domain.entity.*;
 import com.example.backend.domain.enums.CartStatus;
 import com.example.backend.domain.enums.OrderStatus;
 import com.example.backend.dto.order.CreateOrderRequest;
@@ -32,18 +28,21 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
     // CREATE ORDER FROM CART
+    // CREATE ORDER FROM CART
+    @Transactional
     public OrderResponse createOrderFromCart(CreateOrderRequest request) {
-        // Get user's active cart
+        // Lấy giỏ hàng đang hoạt động của user
         Cart cart = cartRepository.findByUserIdAndStatus(request.getUserId(), CartStatus.ACTIVE)
                 .orElseThrow(() -> new CartNotFoundException("No active cart found for user " + request.getUserId()));
 
-        // Validate user exists
+        // Xác minh user tồn tại
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Create order
+        // Tạo order mới
         Order order = Order.builder()
                 .user(user)
                 .cart(cart)
@@ -63,15 +62,28 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Copy cart items to order items (only selected items)
+        // Lấy danh sách sản phẩm trong cart
         List<CartItem> cartItems = cartItemRepository.findByCart_Id(cart.getId());
+
         for (CartItem cartItem : cartItems) {
-            // Chỉ đẩy những cart_item đc chọn
+            // Chỉ xử lý những item được chọn
             if (cartItem.isSelected()) {
+                Product product = cartItem.getProduct();
+
+                // --- Kiểm tra tồn kho ---
+                if (product.getQuantity() < cartItem.getQuantity()) {
+                    throw new RuntimeException("Sản phẩm '" + product.getName() + "' không đủ hàng tồn kho!");
+                }
+
+                // --- Trừ tồn kho ---
+                product.setQuantity(product.getQuantity() - cartItem.getQuantity());
+                productRepository.save(product);
+
+                // --- Tạo order item ---
                 OrderItem orderItem = OrderItem.builder()
                         .order(savedOrder)
-                        .product(cartItem.getProduct())
-                        .productName(cartItem.getProduct().getName())
+                        .product(product)
+                        .productName(product.getName())
                         .unitPrice(cartItem.getUnitPrice())
                         .quantity(cartItem.getQuantity())
                         .taxRate(cartItem.getTaxRate())
@@ -82,11 +94,11 @@ public class OrderService {
             }
         }
 
-        // Chỉ xóa những cart_item có Selected = true
+        // Xóa những item đã chọn khỏi giỏ hàng
         List<CartItem> selectedItems = cartItems.stream()
                 .filter(CartItem::isSelected)
                 .toList();
-        
+
         for (CartItem selectedItem : selectedItems) {
             cartItemRepository.delete(selectedItem);
         }
@@ -95,15 +107,42 @@ public class OrderService {
     }
 
     // UPDATE ORDER STATUS
+    @Transactional
     public OrderResponse updateOrderStatus(Integer orderId, UpdateOrderStatusRequest request) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-        if (request.getOrderStatus() != null) {
-            order.setOrderStatus(request.getOrderStatus());
+        OrderStatus newStatus = request.getOrderStatus();
+
+        if (newStatus == null) {
+            throw new IllegalArgumentException("Order status must not be null");
         }
-        return mapToOrderResponse(orderRepository.save(order));
+
+        OrderStatus oldStatus = order.getOrderStatus();
+
+        // Nếu status không thay đổi thì không làm gì
+        if (oldStatus == newStatus) {
+            return mapToOrderResponse(order);
+        }
+
+        // 🔄 Nếu chuyển sang CANCELLED thì hoàn lại stock
+        if (newStatus == OrderStatus.CANCELLED) {
+            List<OrderItem> items = orderItemRepository.findByOrder_Id(orderId);
+
+            for (OrderItem item : items) {
+                Product product = item.getProduct();
+                product.setQuantity(product.getQuantity() + item.getQuantity()); // hoàn lại số lượng
+                productRepository.save(product);
+            }
+        }
+
+        // Cập nhật trạng thái đơn
+        order.setOrderStatus(newStatus);
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapToOrderResponse(updatedOrder);
     }
+
 
     // GET ORDER BY orderID
     public OrderResponse getOrderById(Integer orderId) {
