@@ -4,6 +4,7 @@ import java.util.List; // <-- SỬA LỖI: Import còn thiếu
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.backend.dto.chat.ConversationDto;
 import com.example.backend.dto.chat.ConversationSummaryDto;
 import com.example.backend.dto.chat.MessageDto;
 import com.example.backend.dto.chat.ReadReceiptRequest;
@@ -158,9 +160,32 @@ public class ChatController {
                 HttpStatus.UNAUTHORIZED, "Unauthenticated");
     }
 
-    
-     @GetMapping
-public ResponseEntity<Page<ConversationSummaryDto>> getAllConversations(
+    /**
+     * Customer: Lấy conversation với admin
+     */
+    @GetMapping("/conversation")
+    public ResponseEntity<ConversationDto> getCustomerConversation(HttpServletRequest httpRequest) {
+        Integer customerId = resolveUserId(httpRequest);
+        ConversationDto conversation = chatService.getCustomerConversationWithAdmin(customerId);
+        return ResponseEntity.ok(conversation);
+    }
+
+    /**
+     * Customer: Lấy số tin nhắn chưa đọc
+     */
+    @GetMapping("/unread-count/{conversationId}")
+    public ResponseEntity<Integer> getUnreadCount(@PathVariable Integer conversationId, HttpServletRequest httpRequest) {
+        Integer customerId = resolveUserId(httpRequest);
+        Integer unreadCount = chatService.getUnreadCountForCustomer(customerId, conversationId);
+        return ResponseEntity.ok(unreadCount);
+    }
+
+    /**
+     * Admin: Lấy danh sách tất cả conversations
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<ConversationSummaryDto>> getAllConversations(
         @RequestParam(name = "page", defaultValue = "0") int page,
         @RequestParam(name = "size", defaultValue = "20") int size,
         @RequestParam(name = "sort", defaultValue = "createdAt,desc") String[] sort // simple support
@@ -182,5 +207,6 @@ public ResponseEntity<Page<ConversationSummaryDto>> getAllConversations(
     Page<ConversationSummaryDto> resp = chatService.getAllConversationsForAdmin(pageable);
     return ResponseEntity.ok(resp);
 }
+
 }
 

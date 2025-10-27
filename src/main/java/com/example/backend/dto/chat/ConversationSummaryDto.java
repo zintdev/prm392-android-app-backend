@@ -18,8 +18,12 @@ import lombok.*;
 public class ConversationSummaryDto {
     private Integer conversationId;
     private List<Integer> participantIds;
-    private MessageDto lastMessage; // (File này giờ đã chứa Long)
-    
-    // THAY ĐỔI: Instant -> Long
+    private MessageDto lastMessage;
     private Long lastMessageAt;
+    
+    // Additional fields for admin UI
+    private Integer customerId;
+    private String customerName;
+    private String customerEmail;
+    private Integer unreadCount;
 }

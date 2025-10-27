@@ -32,8 +32,7 @@ public class Message {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(name = "read_at")
-    private Instant readAt;
+    // Removed readAt field - using message_reads table instead
 
     @PrePersist
     public void prePersist() {

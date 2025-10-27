@@ -130,6 +130,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.backend.domain.entity.Conversation;
 import com.example.backend.domain.entity.ConversationParticipant;
 import com.example.backend.domain.entity.Message;
+import com.example.backend.dto.chat.ConversationDto;
 import com.example.backend.dto.chat.ConversationSummaryDto;
 import com.example.backend.dto.chat.MessageDto;
 import com.example.backend.dto.chat.ReadReceiptRequest;
@@ -138,18 +139,20 @@ import com.example.backend.dto.chat.TypingEventRequest;
 import com.example.backend.repository.ConversationParticipantRepository;
 import com.example.backend.repository.ConversationRepository;
 import com.example.backend.repository.MessageRepository;
+import com.example.backend.repository.MessageReadRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -158,6 +161,7 @@ public class ChatService {
     private final MessageRepository messageRepo;
     private final ConversationRepository conversationRepo;
     private final ConversationParticipantRepository participantRepo;
+    private final MessageReadRepository messageReadRepo;
     private final FirebaseChatService firebaseService;
     private final UserService userService; // injected
 
@@ -226,14 +230,22 @@ public class ChatService {
         conversationRepo.save(conversation);
 
         MessageDto messageDto = MessageDto.fromEntity(message);
-        firebaseService.pushNewMessage(messageDto);
+        
+        // Push to Firebase asynchronously (don't wait for completion)
+        firebaseService.pushNewMessage(messageDto)
+            .exceptionally(throwable -> {
+                log.error("Failed to push message to Firebase: {}", throwable.getMessage());
+                return null; // Continue execution even if Firebase fails
+            });
 
         return messageDto;
     }
 
     public List<MessageDto> getMessageHistory(Integer currentUserId, Integer conversationId) {
-        Conversation conv = conversationRepo.findById(conversationId)
-                .orElseThrow(() -> new EntityNotFoundException("Conversation not found"));
+        // Verify conversation exists
+        if (!conversationRepo.existsById(conversationId)) {
+            throw new EntityNotFoundException("Conversation not found");
+        }
 
         boolean isAdmin = userService.isAdmin(currentUserId);
         boolean isParticipant = participantRepo.existsByConversationIdAndUserId(conversationId, currentUserId);
@@ -249,59 +261,211 @@ public class ChatService {
     }
 
     @Transactional
-    public void handleTypingEvent(Integer senderId, TypingEventRequest request) { // <-- THAY ĐỔI
-        firebaseService.pushTypingEvent(request.getConversationId(), senderId, request.getIsTyping());
+    public void handleTypingEvent(Integer senderId, TypingEventRequest request) {
+        // Push to Firebase asynchronously
+        firebaseService.pushTypingEvent(request.getConversationId(), senderId, request.getIsTyping())
+            .exceptionally(throwable -> {
+                log.error("Failed to push typing event to Firebase: {}", throwable.getMessage());
+                return null;
+            });
     }
 
     @Transactional
-    public void handleReadReceipt(Integer senderId, ReadReceiptRequest request) { // <-- THAY ĐỔI
+    public void handleReadReceipt(Integer senderId, ReadReceiptRequest request) {
         Message message = messageRepo.findById(request.getMessageId())
                 .orElseThrow(() -> new EntityNotFoundException("Message not found"));
         
-        if (message.getReadAt() == null) {
-            message.setReadAt(Instant.now());
-            messageRepo.save(message);
+        // Check if already read by this user
+        if (!messageReadRepo.existsByMessageIdAndUserId(request.getMessageId(), senderId)) {
+            // Create read receipt
+            com.example.backend.domain.entity.MessageRead messageRead = 
+                com.example.backend.domain.entity.MessageRead.builder()
+                    .messageId(request.getMessageId())
+                    .userId(senderId)
+                    .readAt(Instant.now())
+                    .build();
+            messageReadRepo.save(messageRead);
 
             MessageDto messageDto = MessageDto.fromEntity(message);
-            firebaseService.pushReadReceipt(message.getConversation().getId(), messageDto);
+            
+            // Push to Firebase asynchronously
+            firebaseService.pushReadReceipt(message.getConversation().getId(), messageDto)
+                .exceptionally(throwable -> {
+                    log.error("Failed to push read receipt to Firebase: {}", throwable.getMessage());
+                    return null;
+                });
         }
     }
 
     @Transactional(readOnly = true)
-    public Page<ConversationSummaryDto> getAllConversationsForAdmin(Pageable pageable) {
-        // 1) page conversations
-        Page<Conversation> convPage = conversationRepo.findAll(pageable);
+public Page<ConversationSummaryDto> getAllConversationsForAdmin(Pageable pageable) {
+    Integer adminId = userService.getAdminUserId();
+    if (adminId == null) {
+        throw new EntityNotFoundException("Admin not found");
+    }
 
-        List<Integer> convIds = convPage.stream().map(Conversation::getId).collect(Collectors.toList());
+    // 1) Get conversations with admin using optimized query
+    List<Object[]> conversationData = conversationRepo.findConversationsWithAdmin(adminId);
 
-        // 2) For simplicity (and because you asked to avoid another repo), we query last message per conversation one-by-one.
-        //    This is N+1 on messages but acceptable for small volumes. Optimize later if necessary.
-        Map<Integer, MessageDto> lastMessageMap = new HashMap<>();
-        for (Integer cid : convIds) {
-            messageRepo.findFirstByConversationIdOrderByCreatedAtDesc(cid)
-                .ifPresent(m -> lastMessageMap.put(cid, MessageDto.fromEntity(m)));
+    // 2) Extract conversation IDs safely
+    List<Integer> convIds = conversationData.stream()
+        .map(row -> {
+            Object idObj = row[0];
+            if (idObj == null) return null;
+            if (idObj instanceof Number) return ((Number) idObj).intValue();
+            return Integer.valueOf(idObj.toString());
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    // 3) Get last messages for all conversations in one query
+    final Map<Integer, MessageDto> lastMessageMap = new HashMap<>();
+    if (!convIds.isEmpty()) {
+        List<Message> lastMessages = messageRepo.findLastMessagesByConversationIds(convIds);
+        Map<Integer, MessageDto> tempMap = lastMessages.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                m -> m.getConversation().getId(),
+                MessageDto::fromEntity,
+                (existing, replacement) -> {
+                    // keep the one with greater createdAt
+                    if (existing.getCreatedAt() == null) return replacement;
+                    if (replacement.getCreatedAt() == null) return existing;
+                    return existing.getCreatedAt() >= replacement.getCreatedAt() ? existing : replacement;
+                }
+            ));
+        lastMessageMap.putAll(tempMap);
+    }
+
+    // 4) Get customer info for each conversation — do parsing safely
+    Map<Integer, Map<String, Object>> customerInfoMap = new HashMap<>();
+    for (Integer convId : convIds) {
+        List<Object[]> customerData = conversationRepo.findCustomerInfoByConversationId(convId, adminId);
+        if (!customerData.isEmpty()) {
+            Object[] row = customerData.get(0);
+            Map<String, Object> customerInfo = new HashMap<>();
+
+            // parse customerId
+            Object custIdObj = row[0];
+            Integer customerId = null;
+            if (custIdObj != null) {
+                if (custIdObj instanceof Number) customerId = ((Number) custIdObj).intValue();
+                else customerId = Integer.valueOf(custIdObj.toString());
+            }
+            customerInfo.put("customerId", customerId);
+
+            // parse customerName/email (strings)
+            customerInfo.put("customerName", row[1] != null ? row[1].toString() : null);
+            customerInfo.put("customerEmail", row[2] != null ? row[2].toString() : null);
+
+            // parse unreadCount (could be BigInteger/Long/Integer)
+            Object unreadObj = row[3];
+            Integer unreadCount = 0;
+            if (unreadObj != null) {
+                if (unreadObj instanceof Number) unreadCount = ((Number) unreadObj).intValue();
+                else {
+                    try { unreadCount = Integer.parseInt(unreadObj.toString()); }
+                    catch (NumberFormatException ex) { unreadCount = 0; }
+                }
+            }
+            customerInfo.put("unreadCount", unreadCount);
+
+            customerInfoMap.put(convId, customerInfo);
         }
+    }
 
-        // 3) build DTO page content
-        List<ConversationSummaryDto> content = convPage.stream().map(conv -> {
-            List<Integer> participantIds = Optional.ofNullable(conv.getParticipants())
-    .orElse(Collections.emptySet())
-    .stream()
-    .map(ConversationParticipant::getUserId)
-    .collect(Collectors.toList());
+    // 5) Build DTOs - parse created_at / last_message_at from conversationData safely
+    List<ConversationSummaryDto> content = conversationData.stream()
+        .map(row -> {
+            // row layout: c.id, c.created_at, c.last_message_at (per your query)
+            Integer convId = null;
+            Object idObj = row[0];
+            if (idObj != null) {
+                if (idObj instanceof Number) convId = ((Number) idObj).intValue();
+                else convId = Integer.valueOf(idObj.toString());
+            }
 
+            // parse last_message_at into epoch millis (Long) or null
+            Long lastMsgAt = null;
+            Object lastMsgAtObj = row.length > 2 ? row[2] : null;
+            if (lastMsgAtObj != null) {
+                if (lastMsgAtObj instanceof Number) {
+                    lastMsgAt = ((Number) lastMsgAtObj).longValue();
+                } else if (lastMsgAtObj instanceof java.sql.Timestamp) {
+                    lastMsgAt = ((java.sql.Timestamp) lastMsgAtObj).toInstant().toEpochMilli();
+                } else {
+                    // try parse string
+                    try {
+                        lastMsgAt = Instant.parse(lastMsgAtObj.toString()).toEpochMilli();
+                    } catch (Exception ignored) {
+                        try { lastMsgAt = Long.parseLong(lastMsgAtObj.toString()); } catch (Exception e) { lastMsgAt = null; }
+                    }
+                }
+            }
 
-            MessageDto last = lastMessageMap.get(conv.getId());
-            Long lastAt = last != null ? last.getCreatedAt() : null;
+            MessageDto lastMessage = lastMessageMap.get(convId);
+            Map<String, Object> customerInfo = customerInfoMap.get(convId);
 
             return ConversationSummaryDto.builder()
-                        .conversationId(conv.getId())
-                        .participantIds(participantIds)
-                        .lastMessage(last)
-                        .lastMessageAt(lastAt) // <-- đã là Long
-                        .build();
-            }).collect(Collectors.toList());
-        return new PageImpl<>(content, pageable, convPage.getTotalElements());
+                .conversationId(convId)
+                .lastMessage(lastMessage)
+                .lastMessageAt(lastMessage != null && lastMessage.getCreatedAt() != null ? lastMessage.getCreatedAt() : lastMsgAt)
+                .customerId(customerInfo != null ? (Integer) customerInfo.get("customerId") : null)
+                .customerName(customerInfo != null ? (String) customerInfo.get("customerName") : null)
+                .customerEmail(customerInfo != null ? (String) customerInfo.get("customerEmail") : null)
+                .unreadCount(customerInfo != null ? (Integer) customerInfo.get("unreadCount") : 0)
+                .build();
+        })
+        .collect(Collectors.toList());
+
+    // 6) Apply pagination manually (since we're using native query)
+    int start = (int) pageable.getOffset();
+    int end = Math.min(start + pageable.getPageSize(), content.size());
+    List<ConversationSummaryDto> pageContent = content.subList(start, end);
+
+    return new PageImpl<>(pageContent, pageable, content.size());
+}
+
+
+    /**
+     * Customer lấy conversation với admin
+     */
+    @Transactional(readOnly = true)
+    public ConversationDto getCustomerConversationWithAdmin(Integer customerId) {
+        Integer adminId = userService.getAdminUserId();
+        if (adminId == null) {
+            throw new EntityNotFoundException("Admin not found");
+        }
+        
+        List<Integer> convIds = conversationRepo.findConversationIdsBetweenAdminAndCustomer(adminId, customerId);
+        if (!convIds.isEmpty()) {
+            Conversation conversation = conversationRepo.findById(convIds.get(0)).orElseThrow();
+            return ConversationDto.fromEntity(conversation);
+        }
+        
+        // Tạo conversation mới nếu chưa có
+        Conversation conversation = new Conversation();
+        conversation = conversationRepo.save(conversation);
+
+        ConversationParticipant adminPart = new ConversationParticipant();
+        adminPart.setConversation(conversation);
+        adminPart.setUserId(adminId);
+        participantRepo.save(adminPart);
+
+        ConversationParticipant customerPart = new ConversationParticipant();
+        customerPart.setConversation(conversation);
+        customerPart.setUserId(customerId);
+        participantRepo.save(customerPart);
+        
+        return ConversationDto.fromEntity(conversation);
+    }
+
+    /**
+     * Lấy số tin nhắn chưa đọc cho customer
+     */
+    @Transactional(readOnly = true)
+    public Integer getUnreadCountForCustomer(Integer customerId, Integer conversationId) {
+        return messageRepo.countUnreadMessagesForUser(conversationId, customerId);
     }
 
     // helper to quickly build Pageable from page/size/sort strings (optional)

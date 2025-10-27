@@ -19,7 +19,7 @@ public class MessageDto {
 
     // THAY ĐỔI: Instant -> Long
     private Long createdAt;
-    private Long readAt;
+    // Removed readAt - using message_reads table instead
 
     public static MessageDto fromEntity(Message message) {
         MessageDto dto = new MessageDto();
@@ -33,9 +33,7 @@ public class MessageDto {
         if (message.getCreatedAt() != null) {
             dto.setCreatedAt(message.getCreatedAt().toEpochMilli());
         }
-        if (message.getReadAt() != null) {
-            dto.setReadAt(message.getReadAt().toEpochMilli());
-        }
+        // readAt removed - using message_reads table
         
         return dto;
     }
