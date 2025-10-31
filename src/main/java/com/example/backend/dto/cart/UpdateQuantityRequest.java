@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class UpdateQuantityRequest {
-    @Min(0) private int quantity; 
+    private int quantity; 
     private Boolean selected;
 }

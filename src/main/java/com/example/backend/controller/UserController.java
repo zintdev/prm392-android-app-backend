@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.user.UserRequest;
 import com.example.backend.dto.user.UserResponse;
+import com.example.backend.dto.user.UserUpdateRequest;
 import com.example.backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -86,7 +87,7 @@ public class UserController {
     })
     public ResponseEntity<UserResponse> updateUser(
             @Parameter(description = "User ID", required = true) @PathVariable Integer id,
-            @Valid @RequestBody UserRequest request) {
+            @Valid @RequestBody UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return ResponseEntity.ok(response);
     }

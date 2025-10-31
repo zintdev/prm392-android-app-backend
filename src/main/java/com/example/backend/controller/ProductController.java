@@ -43,6 +43,7 @@ public class ProductController {
             @ApiResponse(responseCode = "404", description = "Not Found")
     })
     public ResponseEntity<?> list(
+            @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(value = "publisherId", required = false) Integer publisherId,
             @RequestParam(value = "artistId", required = false) Integer artistId,
@@ -52,10 +53,10 @@ public class ProductController {
             @RequestParam(value = "priceMin", required = false) java.math.BigDecimal priceMin,
             @RequestParam(value = "priceMax", required = false) java.math.BigDecimal priceMax
     ) {
-        if (categoryId == null && publisherId == null && artistId == null && priceSort == null && releaseYearFrom == null && releaseYearTo == null && priceMin == null && priceMax == null) {
+        if (name == null && categoryId == null && publisherId == null && artistId == null && priceSort == null && releaseYearFrom == null && releaseYearTo == null && priceMin == null && priceMax == null) {
             return ResponseEntity.ok(productService.getAll());
         }
-        List<Response> results = productService.filter(categoryId, publisherId, artistId, priceSort, releaseYearFrom, releaseYearTo, priceMin, priceMax);
+        List<Response> results = productService.filter(name, categoryId, publisherId, artistId, priceSort, releaseYearFrom, releaseYearTo, priceMin, priceMax);
         if (results.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
