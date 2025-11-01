@@ -34,6 +34,7 @@ import com.example.backend.service.FileStorageService; // <-- SỬA LỖI: Impor
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import com.example.backend.service.UserService;
 import lombok.RequiredArgsConstructor; // <-- SỬA LỖI: Thêm import
 
 @RestController
@@ -46,6 +47,7 @@ public class ChatController {
     // <-- SỬA LỖI: Khai báo và inject các service bị thiếu
     private final ChatService chatService;
     private final FileStorageService fileStorageService;
+    private final UserService userService;
 
 
     @PostMapping("/send")
@@ -183,8 +185,7 @@ public class ChatController {
     /**
      * Admin: Lấy danh sách tất cả conversations
      */
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/conversations")
     public ResponseEntity<Page<ConversationSummaryDto>> getAllConversations(
         @RequestParam(name = "page", defaultValue = "0") int page,
         @RequestParam(name = "size", defaultValue = "20") int size,
@@ -208,5 +209,20 @@ public class ChatController {
     return ResponseEntity.ok(resp);
 }
 
+    @GetMapping("/search")
+public ResponseEntity<Page<ConversationSummaryDto>> searchConversations(
+        @RequestParam("customerName") String customerName,
+        Pageable pageable
+) {
+    // Lấy adminId (bạn cần tự implement logic này, ví dụ: lấy từ User Service)
+    Integer adminId = userService.getAdminUserId(); 
+
+    Page<ConversationSummaryDto> results = chatService.searchConversationsByCustomerNameForAdmin(
+            customerName,
+            pageable,
+            adminId
+    );
+    return ResponseEntity.ok(results);
+}
 }
 

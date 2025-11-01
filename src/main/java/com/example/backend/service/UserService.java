@@ -13,16 +13,28 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Integer adminUserId;
+
+    public UserService(UserRepository userRepository,
+                           PasswordEncoder passwordEncoder,
+                           @Value("${app.admin.user-id}") Integer adminUserId) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.adminUserId = adminUserId;
+    }
 
     // CREATE - Tạo user mới
     public UserResponse createUser(UserRequest request) {
@@ -143,4 +155,19 @@ public class UserService {
                 .role(String.valueOf(user.getRole()))
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public boolean isAdmin(Integer userId) {
+        if (userId == null) return false;
+        if (adminUserId != null && adminUserId.equals(userId)) return true;
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        return userOpt.map(u -> u.getRole() == UserRole.ADMIN).orElse(false);
+    }
+
+    public Integer getAdminUserId() {
+        return adminUserId;
+    }
+
+
 }

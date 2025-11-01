@@ -38,6 +38,8 @@ package com.example.backend.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -98,6 +100,25 @@ public interface ConversationRepository extends JpaRepository<Conversation, Inte
             AND cp.user_id != :adminId
             LIMIT 1
             """, nativeQuery = true)
-    List<Object[]> findCustomerInfoByConversationId(@Param("conversationId") Integer conversationId, 
+        List<Object[]> findCustomerInfoByConversationId(@Param("conversationId") Integer conversationId, 
                                                    @Param("adminId") Integer adminId);
+
+    /**
+     * Tìm conversations có admin tham gia và customer có tên khớp với tên tìm kiếm
+     */
+    @Query("""
+        select distinct c
+        from Conversation c
+        join c.participants pAdmin on pAdmin.userId = :adminId
+        join c.participants pCustomer
+        join User u on u.id = pCustomer.userId
+        where pCustomer.userId != :adminId
+        and lower(u.username) like lower(concat('%', :name, '%'))
+        order by c.lastMessageAt desc nulls last, c.createdAt desc
+    """)
+    Page<Conversation> findByParticipantUserFullNameLikeIgnoreCase(
+        @Param("name") String name, 
+        @Param("adminId") Integer adminId,
+        Pageable pageable);
+
 }

@@ -136,6 +136,7 @@ import com.example.backend.dto.chat.MessageDto;
 import com.example.backend.dto.chat.ReadReceiptRequest;
 import com.example.backend.dto.chat.SendMessageRequest;
 import com.example.backend.dto.chat.TypingEventRequest;
+import com.example.backend.mapper.ConversationMapper;
 import com.example.backend.repository.ConversationParticipantRepository;
 import com.example.backend.repository.ConversationRepository;
 import com.example.backend.repository.MessageRepository;
@@ -164,6 +165,7 @@ public class ChatService {
     private final MessageReadRepository messageReadRepo;
     private final FirebaseChatService firebaseService;
     private final UserService userService; // injected
+    private final ConversationMapper conversationMapper;
 
     /**
      * Gửi tin nhắn - enforce business rule: hệ thống chỉ có 1 admin duy nhất.
@@ -238,7 +240,60 @@ public class ChatService {
                 return null; // Continue execution even if Firebase fails
             });
 
+        // --- THÊM MỚI: Bắt đầu từ đây ---
+        // 1. Tạo bản tóm tắt cho Admin Inbox
+        ConversationSummaryDto summaryDto = buildSummaryForAdmin(conversation.getId(), adminId, customerId, messageDto);
+        
+        // 2. Đẩy (push) bản tóm tắt này lên node riêng cho Admin
+        // (Hàm này cần được thêm vào FirebaseChatService)
+        firebaseService.pushAdminInboxUpdate(adminId, summaryDto)
+            .exceptionally(throwable -> {
+                log.error("Failed to push ADMIN INBOX update to Firebase: {}", throwable.getMessage());
+                return null;
+            });
+        // --- THÊM MỚI: Kết thúc ở đây ---
+
         return messageDto;
+    }
+
+    /**
+     * THÊM MỚI: Hàm helper để tạo DTO tóm tắt cho Admin
+     */
+    private ConversationSummaryDto buildSummaryForAdmin(Integer conversationId, Integer adminId, Integer customerId, MessageDto lastMessage) {
+        // 1. Lấy thông tin Customer và số tin chưa đọc
+        // (Tái sử dụng native query hiệu quả của bạn)
+        List<Object[]> customerData = conversationRepo.findCustomerInfoByConversationId(conversationId, adminId);
+        
+        String customerName = null;
+        String customerEmail = null;
+        Integer unreadCount = 0;
+
+        if (!customerData.isEmpty()) {
+            Object[] row = customerData.get(0);
+            try {
+                customerName = row[1] != null ? row[1].toString() : null;
+                customerEmail = row[2] != null ? row[2].toString() : null;
+                Object unreadObj = row[3];
+                if (unreadObj instanceof Number) {
+                    unreadCount = ((Number) unreadObj).intValue();
+                } else {
+                    unreadCount = Integer.parseInt(unreadObj.toString());
+                }
+            } catch (Exception e) {
+                log.warn("Error parsing customer data for summary push", e);
+            }
+        }
+
+        // 2. Xây dựng DTO tóm tắt
+        return ConversationSummaryDto.builder()
+                .conversationId(conversationId)
+                .lastMessage(lastMessage)
+                .lastMessageAt(lastMessage.getCreatedAt())
+                .customerId(customerId)
+                .customerName(customerName)
+                .customerEmail(customerEmail)
+                .unreadCount(unreadCount) // Đã bao gồm số tin chưa đọc mới nhất
+                .build();
     }
 
     public List<MessageDto> getMessageHistory(Integer currentUserId, Integer conversationId) {
@@ -472,6 +527,49 @@ public Page<ConversationSummaryDto> getAllConversationsForAdmin(Pageable pageabl
     public static Pageable buildPageable(int page, int size, String sortProperty, String direction) {
         Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return PageRequest.of(page, size, Sort.by(dir, sortProperty));
+    }
+
+    public Page<ConversationSummaryDto> searchConversationsByCustomerNameForAdmin(String customerName, Pageable pageable, Integer adminId) {
+        Page<Conversation> page = conversationRepo.findByParticipantUserFullNameLikeIgnoreCase(customerName, adminId, pageable);
+
+        // 1) Map Conversation -> ConversationSummaryDto (without unreadCount)
+        Page<ConversationSummaryDto> dtoPage = page.map(conversationMapper::toSummaryDto);
+
+        // 2) Collect conversationIds to batch-query unread counts
+        List<Integer> convIds = dtoPage.getContent().stream()
+                .map(ConversationSummaryDto::getConversationId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (!convIds.isEmpty()) {
+            // call batch count
+            List<Object[]> raw = messageRepo.countUnreadByConversationIdsAndReceiverNative(convIds, adminId);
+
+            // build map convId -> count
+            Map<Integer, Integer> unreadMap = new HashMap<>();
+            for (Object[] row : raw) {
+                if (row == null || row.length < 2) continue;
+                Integer convId = row[0] instanceof Number ? ((Number) row[0]).intValue() : Integer.parseInt(String.valueOf(row[0]));
+                Integer cnt = row[1] instanceof Number ? ((Number) row[1]).intValue() : Integer.parseInt(String.valueOf(row[1]));
+                unreadMap.put(convId, cnt);
+            }
+
+            // 3) Set unreadCount on DTOs (mutate dtoPage content)
+            dtoPage.getContent().forEach(d -> {
+                Integer cid = d.getConversationId();
+                if (cid != null) {
+                    d.setUnreadCount(unreadMap.getOrDefault(cid, 0));
+                } else {
+                    d.setUnreadCount(0);
+                }
+            });
+        } else {
+            // no conversations
+            dtoPage.getContent().forEach(d -> d.setUnreadCount(0));
+        }
+
+        return dtoPage;
     }
 
 }
