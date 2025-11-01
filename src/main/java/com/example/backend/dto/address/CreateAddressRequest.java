@@ -9,7 +9,12 @@ import jakarta.validation.constraints.NotNull;
 public class CreateAddressRequest {
     @NotNull
     private Integer userId;
-    
+
+    @NotNull
+    private String fullName;
+
+    private String phoneNumber;
+
     @NotNull
     private String shippingAddressLine1;
     

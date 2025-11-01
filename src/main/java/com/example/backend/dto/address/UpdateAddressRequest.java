@@ -8,7 +8,10 @@ import java.time.OffsetDateTime;
 @Schema(name = "UpdateAddressRequest", description = "Update address request body")
 public class UpdateAddressRequest {
     private Integer userId;
+    private String fullName;
+    private String phoneNumber;
     private String shippingAddressLine1;
     private String shippingAddressLine2;
     private String shippingCityState;
+    private Boolean isDefault;
 }

@@ -9,8 +9,11 @@ import java.time.OffsetDateTime;
 public class AddressResponse {
     private Integer id;
     private Integer userId;
+    private String fullName;
+    private String phoneNumber;
     private String shippingAddressLine1;
     private String shippingAddressLine2;
     private String shippingCityState;
+    private Boolean isDefault;
     private OffsetDateTime createdAt;
 }
