@@ -4,6 +4,7 @@ import com.example.backend.domain.entity.User;
 import com.example.backend.domain.enums.UserRole;
 import com.example.backend.dto.user.UserRequest;
 import com.example.backend.dto.user.UserResponse;
+import com.example.backend.dto.user.UserUpdateRequest;
 import com.example.backend.exception.custom.UserAlreadyExistsException;
 import com.example.backend.exception.custom.UserNotFoundException;
 import com.example.backend.repository.UserRepository;
@@ -12,16 +13,28 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Integer adminUserId;
+
+    public UserService(UserRepository userRepository,
+                           PasswordEncoder passwordEncoder,
+                           @Value("${app.admin.user-id}") Integer adminUserId) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.adminUserId = adminUserId;
+    }
 
     // CREATE - Tạo user mới
     public UserResponse createUser(UserRequest request) {
@@ -41,7 +54,8 @@ public class UserService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .role(UserRole.valueOf(request.getRole() != null ? request.getRole() : "USER"))
+                .role(request.getRole() != null ?
+                        UserRole.valueOf(request.getRole().toString().toUpperCase()) : UserRole.CUSTOMER)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -51,10 +65,11 @@ public class UserService {
     // READ - Lấy tất cả users
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+        return userRepository.findByRoleNot(UserRole.ADMIN).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
 
     // READ - Lấy user theo ID
     @Transactional(readOnly = true)
@@ -73,7 +88,7 @@ public class UserService {
     }
 
     // UPDATE - Cập nhật user
-    public UserResponse updateUser(Integer id, UserRequest request) {
+    public UserResponse updateUser(Integer id, UserUpdateRequest request) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
@@ -94,6 +109,7 @@ public class UserService {
             existingUser.setUsername(request.getUsername());
         }
 
+
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
             existingUser.setEmail(request.getEmail());
         }
@@ -102,8 +118,18 @@ public class UserService {
             existingUser.setPhoneNumber(request.getPhoneNumber());
         }
 
-        // Chỉ cập nhật password nếu có trong request
+        // ✅ Kiểm tra mật khẩu cũ trước khi đổi sang mật khẩu mới
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            if (request.getOldPassword() == null || request.getOldPassword().isEmpty()) {
+                throw new IllegalArgumentException("Old password is required to update password.");
+            }
+
+            // So sánh mật khẩu cũ với hash trong DB
+            if (!passwordEncoder.matches(request.getOldPassword(), existingUser.getPasswordHash())) {
+                throw new IllegalArgumentException("Old password is incorrect.");
+            }
+
+            // Nếu đúng thì mã hóa và lưu mật khẩu mới
             existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
 
@@ -129,4 +155,19 @@ public class UserService {
                 .role(String.valueOf(user.getRole()))
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public boolean isAdmin(Integer userId) {
+        if (userId == null) return false;
+        if (adminUserId != null && adminUserId.equals(userId)) return true;
+
+        Optional<User> userOpt = userRepository.findById(userId);
+        return userOpt.map(u -> u.getRole() == UserRole.ADMIN).orElse(false);
+    }
+
+    public Integer getAdminUserId() {
+        return adminUserId;
+    }
+
+
 }
