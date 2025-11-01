@@ -12,5 +12,6 @@
             "database": "prm392",
             "username": "postgres"
         }
-    ]
+    ],
+    "java.compile.nullAnalysis.mode": "disabled"
 }
