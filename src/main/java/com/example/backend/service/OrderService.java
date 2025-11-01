@@ -12,6 +12,7 @@ import com.example.backend.exception.custom.OrderNotFoundException;
 import com.example.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -168,11 +169,20 @@ public class OrderService {
     }
 
     // GET ORDERS BY USER ID
-    public List<OrderResponse> getOrdersByUserId(Integer userId) {
-        return orderRepository.findByUserId(userId).stream()
+    public List<OrderResponse> getOrdersByUserId(Integer userId, @Nullable OrderStatus status) {
+        List<Order> orders;
+
+        if (status != null) {
+            orders = orderRepository.findByUserIdAndOrderStatus(userId, status);
+        } else {
+            orders = orderRepository.findByUserId(userId);
+        }
+
+        return orders.stream()
                 .map(this::mapToOrderResponse)
                 .toList();
     }
+
 
     // MAPPER
     private OrderResponse mapToOrderResponse(Order order) {
@@ -209,6 +219,7 @@ public class OrderService {
                 .quantity(item.getQuantity())
                 .taxRate(item.getTaxRate())
                 .currencyCode(item.getCurrencyCode())
+                .imageUrl(item.getProduct() != null ? item.getProduct().getImageUrl() : null)
                 .build();
     }
 }

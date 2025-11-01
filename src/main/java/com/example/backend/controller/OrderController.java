@@ -70,11 +70,14 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    // GET ORDERS BY USER ID
+    // GET /orders/user/{userId}?status=PENDING
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Get orders by user ID")
-    public ResponseEntity<List<OrderResponse>> getOrdersByUserId(@PathVariable Integer userId) {
-        List<OrderResponse> orders = orderService.getOrdersByUserId(userId);
+    @Operation(summary = "Get orders by user ID (optionally filter by status)")
+    public ResponseEntity<List<OrderResponse>> getOrdersByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(name = "status", required = false) OrderStatus orderStatus
+    ) {
+        List<OrderResponse> orders = orderService.getOrdersByUserId(userId, orderStatus);
         return ResponseEntity.ok(orders);
     }
 }
