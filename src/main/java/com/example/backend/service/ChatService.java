@@ -485,7 +485,7 @@ public Page<ConversationSummaryDto> getAllConversationsForAdmin(Pageable pageabl
     /**
      * Customer lấy conversation với admin
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public ConversationDto getCustomerConversationWithAdmin(Integer customerId) {
         Integer adminId = userService.getAdminUserId();
         if (adminId == null) {
