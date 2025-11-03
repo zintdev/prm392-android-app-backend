@@ -12,6 +12,9 @@ import lombok.*;
 
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class StoreLocationRequest {
+    @NotBlank @Size(max=150)
+    private String storeName;
+
     @NotNull @DecimalMin(value="-90.0")  @DecimalMax(value="90.0")
     private BigDecimal latitude;
 

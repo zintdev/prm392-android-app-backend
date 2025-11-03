@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface StoreRepository extends JpaRepository<StoreLocation, Integer> {
+    boolean existsByStoreNameIgnoreCase(String storeName);
+    boolean existsByAddressIgnoreCase(String address);
 
     // 1) Nearby không cần product
     @Query(value = """

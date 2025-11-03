@@ -6,6 +6,8 @@ import com.example.backend.mapper.StoreLocationMapper;
 import com.example.backend.repository.StoreRepository;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.stream.Collectors;
 
@@ -22,6 +24,11 @@ public class StoreService {
     }
 
     public StoreLocationResponse create(StoreLocationRequest req) {
+        if (repo.existsByStoreNameIgnoreCase(req.getStoreName()) ||
+            repo.existsByAddressIgnoreCase(req.getAddress())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Tên cửa hàng hoặc địa chỉ này đã tồn tại");
+        }
         StoreLocation saved = repo.save(StoreLocationMapper.toEntity(req));
         return StoreLocationMapper.toResponse(saved);
     }
@@ -41,6 +48,14 @@ public class StoreService {
     public StoreLocationResponse update(Integer id, StoreLocationRequest req) {
         StoreLocation entity = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("StoreLocation not found: " + id));
+        // conflict checks only if changed
+        boolean nameChanged = req.getStoreName() != null && !req.getStoreName().equalsIgnoreCase(entity.getStoreName());
+        boolean addrChanged = req.getAddress() != null && !req.getAddress().equalsIgnoreCase(entity.getAddress());
+        if ((nameChanged && repo.existsByStoreNameIgnoreCase(req.getStoreName())) ||
+            (addrChanged && repo.existsByAddressIgnoreCase(req.getAddress()))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Tên cửa hàng hoặc địa chỉ này đã tồn tại");
+        }
         StoreLocationMapper.updateEntity(entity, req);
         return StoreLocationMapper.toResponse(repo.save(entity));
     }
@@ -53,7 +68,7 @@ public class StoreService {
     }
 
     private Sort sanitizeSort(Sort sort) {
-        var allowed = java.util.Set.of("id", "latitude", "longitude", "address");
+        var allowed = java.util.Set.of("id", "storeName", "latitude", "longitude", "address");
         var cleaned = sort.stream().filter(o -> allowed.contains(o.getProperty())).toList();
         return cleaned.isEmpty() ? Sort.by(Sort.Order.asc("address")) : Sort.by(cleaned);
     }
