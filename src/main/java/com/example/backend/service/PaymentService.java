@@ -44,8 +44,8 @@ public class PaymentService {
 
         if (existingPaymentOpt.isPresent()) {
             payment = existingPaymentOpt.get();
-            //Nếu payment chưa FAILED thì không cho tạo lại
-            if (payment.getStatus() != PaymentStatus.FAILED) {
+            if (payment.getStatus() != PaymentStatus.FAILED &&
+                    !(payment.getMethod() == PaymentMethod.VNPAY && payment.getStatus() == PaymentStatus.PENDING)) {
                 throw new PaymentAlreadyExistsException(
                         "Payment already exists for order " + req.getOrderId() +
                                 " with status " + payment.getStatus()
