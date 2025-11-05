@@ -33,35 +33,45 @@ public class PaymentService {
 
     // CREATE
     public PaymentResponse create(CreatePaymentRequest req) {
-        // Validate order exists
+        //1. Kiểm tra order có tồn tại không
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Kiểm tra payment hiện tại của order (nếu có)
+        //Kiểm tra payment hiện tại của order (nếu có)
         Optional<Payment> existingPaymentOpt = paymentRepository.findByOrderId(req.getOrderId());
 
+        Payment payment;
+
         if (existingPaymentOpt.isPresent()) {
-            Payment existingPayment = existingPaymentOpt.get();
-            // Nếu payment hiện tại chưa FAILED thì không được tạo lại
-            if (existingPayment.getStatus() != PaymentStatus.FAILED) {
+            payment = existingPaymentOpt.get();
+            if (payment.getStatus() != PaymentStatus.FAILED &&
+                    !(payment.getMethod() == PaymentMethod.VNPAY && payment.getStatus() == PaymentStatus.PENDING)) {
                 throw new PaymentAlreadyExistsException(
                         "Payment already exists for order " + req.getOrderId() +
-                                " with status " + existingPayment.getStatus()
+                                " with status " + payment.getStatus()
                 );
             }
+            //Nếu payment đang FAILED → reset lại trạng thái
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setMethod(req.getMethod());
+            payment.setAmount(req.getAmount());
+            payment.setPaidAt(null); // reset thời gian thanh toán cũ nếu có
+        } else {
+            //Nếu chưa có payment → tạo mới
+            payment = Payment.builder()
+                    .order(order)
+                    .method(req.getMethod())
+                    .status(PaymentStatus.PENDING)
+                    .amount(req.getAmount())
+                    .build();
         }
 
-        // Nếu chưa có hoặc đã FAILED thì tạo mới
-        Payment payment = Payment.builder()
-                .order(order)
-                .method(req.getMethod())
-                .status(PaymentStatus.PENDING)
-                .amount(req.getAmount())
-                .build();
-
+        //Lưu lại payment (update hoặc insert)
         Payment saved = paymentRepository.save(payment);
         return mapToResponse(saved);
     }
+
+
 
     // READ ALL
     public List<PaymentResponse> getAll() {

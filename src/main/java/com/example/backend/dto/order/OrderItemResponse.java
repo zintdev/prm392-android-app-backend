@@ -14,4 +14,5 @@ public class OrderItemResponse {
     private Integer quantity;
     private BigDecimal taxRate;
     private String currencyCode;
+    private String imageUrl;
 }
