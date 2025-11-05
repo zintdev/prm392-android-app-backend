@@ -2,7 +2,6 @@ package com.example.backend.service;
 
 import com.example.backend.domain.entity.User;
 import com.example.backend.domain.enums.UserRole;
-import com.example.backend.dto.*;
 import com.example.backend.dto.auth.AuthResponse;
 import com.example.backend.dto.auth.LoginRequest;
 import com.example.backend.dto.auth.RegisterRequest;

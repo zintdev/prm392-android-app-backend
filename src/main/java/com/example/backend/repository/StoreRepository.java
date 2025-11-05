@@ -8,12 +8,14 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface StoreRepository extends JpaRepository<StoreLocation, Integer> {
+    boolean existsByStoreNameIgnoreCase(String storeName);
+    boolean existsByAddressIgnoreCase(String address);
 
     // 1) Nearby không cần product
     @Query(value = """
         SELECT 
             s.store_location_id AS storeId,
-            s.address AS name,           -- vì chưa có cột name, tạm dùng address để hiển thị
+            s.store_name AS name,
             s.address AS address,
             CAST(s.latitude AS DOUBLE PRECISION) AS latitude,
             CAST(s.longitude AS DOUBLE PRECISION) AS longitude,
@@ -40,7 +42,7 @@ public interface StoreRepository extends JpaRepository<StoreLocation, Integer> {
     @Query(value = """
         SELECT 
             s.store_location_id AS storeId,
-            s.address AS name,           -- tạm dùng address
+            s.store_name AS name,
             s.address AS address,
             CAST(s.latitude AS DOUBLE PRECISION) AS latitude,
             CAST(s.longitude AS DOUBLE PRECISION) AS longitude,

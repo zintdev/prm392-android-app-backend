@@ -14,20 +14,12 @@ public class CreateAddressRequest {
     @Schema(description = "User ID", example = "1")
     private Integer userId;
 
-    // === BỔ SUNG ===
-    @NotBlank
-    @Size(max = 150)
-    @Schema(description = "Full name of the recipient", example = "Nguyen Van A")
+    @NotNull
     private String fullName;
 
-    @NotBlank
-    @Size(max = 20)
-    @Schema(description = "Phone number of the recipient", example = "0901234567")
     private String phoneNumber;
-    // ===============
-    
-    @NotBlank
-    @Schema(description = "Address line 1", example = "123 Vo Van Kiet")
+
+    @NotNull
     private String shippingAddressLine1;
     
     @Schema(description = "Address line 2 (optional)", example = "Apartment 4B")

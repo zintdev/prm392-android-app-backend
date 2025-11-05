@@ -26,27 +26,27 @@ public class AddressService {
 
     // CREATE
     public AddressResponse create(CreateAddressRequest req) {
-        // Validate user exists
+        //Kiểm tra user tồn tại
         User user = userRepository.findById(req.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if address already exists for this user (dựa trên line1 và city)
+        //Kiểm tra địa chỉ trùng
         if (addressRepository.existsByUserIdAndShippingAddressLine1AndShippingCityState(
                 req.getUserId(), req.getShippingAddressLine1(), req.getShippingCityState())) {
             throw new AddressAlreadyExistsException("Address already exists for this user");
         }
 
-        // Logic nghiệp vụ: Nếu địa chỉ này là default, set các địa chỉ khác là false
-        boolean isDefault = req.getIsDefault() != null && req.getIsDefault();
-        if (isDefault) {
-            handleSetDefault(req.getUserId(), null);
-        }
+        //Kiểm tra xem user đã có địa chỉ nào chưa
+        boolean hasAddress = addressRepository.existsByUserId(req.getUserId());
+
+        //Nếu chưa có, đặt isDefault = true
+        boolean isDefault = !hasAddress;
 
         Address address = Address.builder()
                 .user(user)
-                // === CẬP NHẬT ===
                 .fullName(req.getFullName())
                 .phoneNumber(req.getPhoneNumber())
+                .isDefault(isDefault)
                 .shippingAddressLine1(req.getShippingAddressLine1())
                 .shippingAddressLine2(req.getShippingAddressLine2())
                 .shippingCityState(req.getShippingCityState())
@@ -55,16 +55,19 @@ public class AddressService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
+        //Lưu và trả về
         Address saved = addressRepository.save(address);
         return mapToResponse(saved);
     }
 
+
     // READ BY USER ID
     @Transactional(readOnly = true) // Thêm readOnly
     public List<AddressResponse> getAddressByUserId(Integer userId) {
-        return addressRepository.findByUserId(userId)
+        return addressRepository.findByUserIdOrderByIsDefaultDesc(userId)
                 .stream().map(this::mapToResponse).toList();
     }
+
 
     // READ ONE
     @Transactional(readOnly = true) // Thêm readOnly
@@ -85,14 +88,25 @@ public class AddressService {
                     .orElseThrow(() -> new RuntimeException("User not found"));
             address.setUser(user);
         }
-
-        // === CẬP NHẬT LOGIC ===
+//
         if (req.getFullName() != null) {
             address.setFullName(req.getFullName());
         }
+
         if (req.getPhoneNumber() != null) {
             address.setPhoneNumber(req.getPhoneNumber());
         }
+
+        //Xử lý logic (chỉ 1 default)
+        if (Boolean.TRUE.equals(req.getIsDefault())) {
+            // Nếu address này được set isDefault = true thì
+            // tất cả address khác của user về false
+            addressRepository.clearDefaultForUser(address.getUser().getId());
+            address.setIsDefault(true);
+        } else if (req.getIsDefault() != null) {
+            address.setIsDefault(false);
+        }
+//
         if (req.getShippingAddressLine1() != null) {
             address.setShippingAddressLine1(req.getShippingAddressLine1());
         }
@@ -140,9 +154,9 @@ public class AddressService {
         return AddressResponse.builder()
                 .id(address.getId())
                 .userId(address.getUser().getId())
-                // === CẬP NHẬT ===
                 .fullName(address.getFullName())
                 .phoneNumber(address.getPhoneNumber())
+                .isDefault(address.getIsDefault())
                 .shippingAddressLine1(address.getShippingAddressLine1())
                 .shippingAddressLine2(address.getShippingAddressLine2())
                 .shippingCityState(address.getShippingCityState())

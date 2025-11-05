@@ -8,20 +8,27 @@ public class StoreLocationMapper {
 
     public static StoreLocation toEntity(StoreLocationRequest req) {
         return StoreLocation.builder()
-                .storeName(req.getStoreName()) // <-- THÊM DÒNG NÀY
-                .address(req.getAddress())
-                .latitude(req.getLatitude())
-                .longitude(req.getLongitude())
+                .storeName(r.getStoreName())
+                .latitude(r.getLatitude())
+                .longitude(r.getLongitude())
+                .address(r.getAddress())
                 .build();
     }
 
-    public static StoreLocationResponse toResponse(StoreLocation entity) {
+    public static void updateEntity(StoreLocation e, StoreLocationRequest r){
+        e.setStoreName(r.getStoreName());
+        e.setLatitude(r.getLatitude());
+        e.setLongitude(r.getLongitude());
+        e.setAddress(r.getAddress());
+    }
+
+    public static StoreLocationResponse toResponse(StoreLocation e){
         return StoreLocationResponse.builder()
-                .id(entity.getId())
-                .storeName(entity.getStoreName()) // <-- THÊM DÒNG NÀY
-                .address(entity.getAddress())
-                .latitude(entity.getLatitude())
-                .longitude(entity.getLongitude())
+                .id(e.getId())
+                .storeName(e.getStoreName())
+                .latitude(e.getLatitude())
+                .longitude(e.getLongitude())
+                .address(e.getAddress())
                 .build();
     }
 

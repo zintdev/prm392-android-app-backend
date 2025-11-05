@@ -19,12 +19,18 @@ public class Order {
   @JoinColumn(name="user_id", nullable=false)
   private User user;
 
-  @Enumerated(EnumType.STRING) 
+  @ManyToOne(fetch=FetchType.LAZY) 
+  @JoinColumn(name="cart_id")
+  private Cart cart;
+
+  @Enumerated(EnumType.STRING)
   @Column(name="order_status", nullable=false)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private OrderStatus orderStatus;
 
   @Enumerated(EnumType.STRING) 
   @Column(name="shipment_method", nullable=false)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private ShipmentMethod shipmentMethod;
 
   @Column(name="order_date", nullable=false) 
@@ -46,8 +52,10 @@ public class Order {
   @Column(name="grand_total",  nullable=false, precision=12, scale=2)
   private BigDecimal grandTotal = BigDecimal.ZERO;
 
-  @OneToMany(mappedBy="order", cascade=CascadeType.ALL, orphanRemoval=true)
-  private List<OrderItem> items = new ArrayList<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
 
-  @PrePersist void pre() { if (orderDate==null) orderDate = OffsetDateTime.now(); }
+
+    @PrePersist void pre() { if (orderDate==null) orderDate = OffsetDateTime.now(); }
 }

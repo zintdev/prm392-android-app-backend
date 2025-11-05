@@ -1,5 +1,7 @@
 package com.example.backend.domain.entity;
  
+import com.example.backend.domain.enums.PaymentMethod;
+import com.example.backend.domain.enums.PaymentStatus;
 import jakarta.persistence.*;
 import java.time.*;
 import java.math.BigDecimal;
@@ -21,14 +23,14 @@ public class Payment {
     private Order order;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition="payment_method", nullable=false)
-    private com.example.backend.domain.enums.PaymentMethod method;
+    private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition="payment_status", nullable=false)
-    private com.example.backend.domain.enums.PaymentStatus status;
+    private PaymentStatus status;
 
     @Column(nullable=false, precision=12, scale=2)
     private BigDecimal amount;

@@ -1,11 +1,8 @@
 package com.example.backend.domain.entity;
- 
+
 import jakarta.persistence.*;
-import java.time.*;
 import java.math.BigDecimal;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "store_locations")
@@ -16,6 +13,12 @@ public class StoreLocation {
     @Column(name="store_location_id")
     private Integer id;
 
+    // ==================================
+    // === THÊM TRƯỜNG NÀY VÀO ===
+    @Column(name="store_name", nullable=false, length=150)
+    private String storeName;
+    // ==================================
+
     @Column(precision=9, scale=6, nullable=false)
     private BigDecimal latitude;
 
@@ -23,6 +26,6 @@ public class StoreLocation {
     private BigDecimal longitude;
 
     @Column(nullable=false, length=255)
-    private String address;
+    private String address; // Đây sẽ là địa chỉ đầy đủ (ví dụ: Chợ Bến Thành...)
 
 }

@@ -1,6 +1,5 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.*;
 import com.example.backend.dto.auth.AuthResponse;
 import com.example.backend.dto.auth.LoginRequest;
 import com.example.backend.dto.auth.RegisterRequest;

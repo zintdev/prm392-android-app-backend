@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -225,7 +226,9 @@ public class CartService {
     return CartResponse.builder()
         .cartId(c.getId())
         .status(c.getStatus().name())
-        .items(c.getItems().stream().map(ci -> {
+        .items(c.getItems().stream()
+        .sorted(Comparator.comparing(CartItem::getId).reversed())
+        .map(ci -> {
           Product prod = ci.getProduct();
           return CartResponse.Item.builder()
               .cartItemId(ci.getId())

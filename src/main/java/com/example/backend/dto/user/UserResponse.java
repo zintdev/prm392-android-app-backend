@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(name = "UserResponse", description = "User response body")
 public class UserResponse {
     private Integer id;
     private String username;

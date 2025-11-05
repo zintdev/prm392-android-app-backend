@@ -10,12 +10,8 @@ import lombok.*;
 
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class StoreLocationRequest {
-
-    // ==================================
-    // === THÊM TRƯỜNG NÀY VÀO ===
     @NotBlank @Size(max=150)
-    private String storeName; // Tên cửa hàng (ví dụ: "CD Store Quận 1")
-    // ==================================
+    private String storeName;
 
     @NotNull @DecimalMin(value="-90.0")  @DecimalMax(value="90.0")
     private BigDecimal latitude;

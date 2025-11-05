@@ -1,5 +1,6 @@
 package com.example.backend.dto.user;
 
+import com.example.backend.domain.enums.UserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(name = "CreateRequest", description = "Create User request body")
 public class UserRequest {
     
     @NotBlank(message = "Username is required")
@@ -30,5 +32,5 @@ public class UserRequest {
     @Size(max = 15, message = "Phone number must not exceed 15 characters")
     private String phoneNumber;
 
-    private String role;
+    private UserRole role;
 }

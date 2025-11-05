@@ -37,7 +37,7 @@ public class AddressController {
     }
 
     // READ BY USER ID
-    @GetMapping("/{userId}")
+    @GetMapping("user/{userId}")
     @Operation(summary = "Get addresses by user ID")
     public ResponseEntity<List<AddressResponse>> getAddressByUserId(@PathVariable Integer userId) {
         return ResponseEntity.ok(addressService.getAddressByUserId(userId));
