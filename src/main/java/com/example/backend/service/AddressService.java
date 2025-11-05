@@ -50,6 +50,8 @@ public class AddressService {
                 .shippingAddressLine1(req.getShippingAddressLine1())
                 .shippingAddressLine2(req.getShippingAddressLine2())
                 .shippingCityState(req.getShippingCityState())
+                .isDefault(isDefault)
+                // ===============
                 .createdAt(OffsetDateTime.now())
                 .build();
 
@@ -60,6 +62,7 @@ public class AddressService {
 
 
     // READ BY USER ID
+    @Transactional(readOnly = true) // Thêm readOnly
     public List<AddressResponse> getAddressByUserId(Integer userId) {
         return addressRepository.findByUserIdOrderByIsDefaultDesc(userId)
                 .stream().map(this::mapToResponse).toList();
@@ -67,6 +70,7 @@ public class AddressService {
 
 
     // READ ONE
+    @Transactional(readOnly = true) // Thêm readOnly
     public AddressResponse getById(Integer id) {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new AddressNotFoundException(id));
@@ -106,23 +110,42 @@ public class AddressService {
         if (req.getShippingAddressLine1() != null) {
             address.setShippingAddressLine1(req.getShippingAddressLine1());
         }
-
         if (req.getShippingAddressLine2() != null) {
             address.setShippingAddressLine2(req.getShippingAddressLine2());
         }
-
         if (req.getShippingCityState() != null) {
             address.setShippingCityState(req.getShippingCityState());
         }
+        
+        // Logic nghiệp vụ: Nếu set địa chỉ này là default
+        if (req.getIsDefault() != null) {
+            if (req.getIsDefault()) {
+                // Set các địa chỉ khác là false
+                handleSetDefault(address.getUser().getId(), address.getId());
+                address.setIsDefault(true);
+            } else {
+                // Không cho phép set default address thành false (phải set 1 cái khác làm default)
+                if (address.getIsDefault()) {
+                    throw new IllegalArgumentException("Cannot set default address to false. Set another address as default instead.");
+                }
+                address.setIsDefault(false);
+            }
+        }
+        // ====================
 
         return mapToResponse(addressRepository.save(address));
     }
 
     // DELETE
     public void delete(Integer id) {
-        if (!addressRepository.existsById(id)) {
-            throw new AddressNotFoundException(id);
+        Address address = addressRepository.findById(id)
+                .orElseThrow(() -> new AddressNotFoundException(id));
+        
+        // Logic nghiệp vụ: Không cho xóa địa chỉ default
+        if (address.getIsDefault()) {
+             throw new IllegalArgumentException("Cannot delete default address. Set another address as default first.");
         }
+
         addressRepository.deleteById(id);
     }
 
@@ -137,7 +160,37 @@ public class AddressService {
                 .shippingAddressLine1(address.getShippingAddressLine1())
                 .shippingAddressLine2(address.getShippingAddressLine2())
                 .shippingCityState(address.getShippingCityState())
+                .isDefault(address.getIsDefault())
                 .createdAt(address.getCreatedAt())
+                // ===============
                 .build();
     }
+
+    // === HÀM HỖ TRỢ MỚI ===
+    /**
+     * Sets all other addresses for the user to isDefault = false.
+     * @param userId The user ID
+     * @param excludeAddressId The address ID to exclude (e.g., the one being updated), can be null.
+     */
+    private void handleSetDefault(Integer userId, Integer excludeAddressId) {
+        // TODO: Bạn cần thêm phương thức này vào AddressRepository
+        // @Modifying
+        // @Query("UPDATE Address a SET a.isDefault = false WHERE a.user.id = :userId AND a.id != :excludeAddressId")
+        // void clearOtherDefaultAddresses(@Param("userId") Integer userId, @Param("excludeAddressId") Integer excludeAddressId);
+        
+        // Hoặc nếu excludeAddressId là null (khi create):
+        // @Modifying
+        // @Query("UPDATE Address a SET a.isDefault = false WHERE a.user.id = :userId")
+        // void clearAllDefaultAddresses(@Param("userId") Integer userId);
+
+        // Giả lập logic (bạn cần implement trong Repository):
+        List<Address> addresses = addressRepository.findByUserId(userId);
+        for (Address addr : addresses) {
+            if (addr.getIsDefault() && (excludeAddressId == null || !addr.getId().equals(excludeAddressId))) {
+                addr.setIsDefault(false);
+                addressRepository.save(addr); // Cách này không hiệu quả, nên dùng @Query
+            }
+        }
+    }
+    // =======================
 }
