@@ -1,8 +1,6 @@
 package com.example.backend.dto.store;
 
 import java.math.BigDecimal;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -22,5 +20,5 @@ public class StoreLocationRequest {
     private BigDecimal longitude;
 
     @NotBlank @Size(max=255)
-    private String address;
+    private String address; // Địa chỉ đầy đủ (ví dụ: "Chợ Bến Thành, Quận 1...")
 }
