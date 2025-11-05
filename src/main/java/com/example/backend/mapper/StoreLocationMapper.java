@@ -1,12 +1,12 @@
 package com.example.backend.mapper;
 
 import com.example.backend.domain.entity.StoreLocation;
-import com.example.backend.dto.store.*;
+import com.example.backend.dto.store.StoreLocationRequest;
+import com.example.backend.dto.store.StoreLocationResponse;
 
-public final class StoreLocationMapper {
-    private StoreLocationMapper(){}
+public class StoreLocationMapper {
 
-    public static StoreLocation toEntity(StoreLocationRequest r){
+    public static StoreLocation toEntity(StoreLocationRequest r) {
         return StoreLocation.builder()
                 .storeName(r.getStoreName())
                 .latitude(r.getLatitude())
@@ -31,4 +31,5 @@ public final class StoreLocationMapper {
                 .address(e.getAddress())
                 .build();
     }
+
 }
