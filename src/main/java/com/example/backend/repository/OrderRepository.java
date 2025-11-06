@@ -4,8 +4,10 @@ import org.springframework.data.domain.Sort;
 
 import com.example.backend.domain.entity.Order;
 import com.example.backend.domain.enums.OrderStatus;
+import com.example.backend.domain.enums.ShipmentMethod;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -13,4 +15,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findByUserId(Integer userId);
     List<Order> findByOrderStatus(OrderStatus orderStatus, Sort sort);
     List<Order> findByUserIdAndOrderStatus(Integer userId, OrderStatus status);
+    List<Order> findByOrderStatusAndKeepingExpiresAtBefore(OrderStatus orderStatus, OffsetDateTime cutoff);
+    List<Order> findByShipmentMethodAndOrderStatusAndKeepingExpiresAtBefore(ShipmentMethod shipmentMethod,
+                                                                            OrderStatus orderStatus,
+                                                                            OffsetDateTime cutoff);
 }

@@ -1,5 +1,6 @@
 package com.example.backend.dto.order;
 
+import com.example.backend.domain.enums.PaymentMethod;
 import com.example.backend.domain.enums.ShipmentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -13,6 +14,9 @@ public class CreateOrderRequest {
     
     @NotNull
     private ShipmentMethod shipmentMethod;
+
+    @NotNull
+    private PaymentMethod paymentMethod;
     
     @NotNull
     private String shippingFullName;
@@ -27,4 +31,6 @@ public class CreateOrderRequest {
     
     @NotNull
     private String shippingCityState;
+
+    private Integer storeLocationId;
 }

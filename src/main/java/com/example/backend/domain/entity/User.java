@@ -2,7 +2,6 @@ package com.example.backend.domain.entity;
  
 import jakarta.persistence.*;
 import java.time.*;
-import java.math.BigDecimal;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -32,6 +31,10 @@ public class User {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "user_role", nullable=false)
     private com.example.backend.domain.enums.UserRole role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_location_id")
+    private StoreLocation storeLocation;
 
     @Column(name="created_at", nullable=false)
     private OffsetDateTime createdAt;

@@ -1,11 +1,10 @@
 package com.example.backend.domain.entity;
  
 import jakarta.persistence.*;
-import java.time.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity @Table(name="order_items")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -27,9 +26,17 @@ public class OrderItem {
   @Column(name="quantity", nullable=false) private Integer quantity;
 
   // NEW
+  @Builder.Default
   @Column(name="tax_rate", nullable=false, precision=5, scale=2)
   private BigDecimal taxRate = BigDecimal.ZERO;
 
-@Column(name="currency_code", nullable=false, length=3, columnDefinition = "char(3)")
-private String currencyCode = "VND";
+  @Builder.Default
+  @Column(name="currency_code", nullable=false, length=3, columnDefinition = "char(3)")
+  private String currencyCode = "VND";
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<OrderFulfillmentSource> fulfillmentSources = new ArrayList<>();
 }

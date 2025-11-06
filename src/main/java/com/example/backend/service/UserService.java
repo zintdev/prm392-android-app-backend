@@ -152,7 +152,10 @@ public class UserService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .role(String.valueOf(user.getRole()))
+        .role(String.valueOf(user.getRole()))
+        .storeLocationId(user.getStoreLocation() != null ? user.getStoreLocation().getId() : null)
+    .storeName(user.getStoreLocation() != null ? user.getStoreLocation().getStoreName() : null)
+    .storeAddress(user.getStoreLocation() != null ? user.getStoreLocation().getAddress() : null)
                 .build();
     }
 

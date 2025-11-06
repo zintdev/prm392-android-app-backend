@@ -45,7 +45,7 @@ public class OrderController {
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
     public ResponseEntity<OrderResponse> updateOrderStatus(
-            @PathVariable Integer orderId,
+        @PathVariable("orderId") Integer orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request
     ) {
         OrderResponse order = orderService.updateOrderStatus(orderId, request);
@@ -55,7 +55,7 @@ public class OrderController {
     // GET ORDER BY ID
     @GetMapping("/{orderId}")
     @Operation(summary = "Get order by ID")
-    public ResponseEntity<OrderResponse> getOrder(@PathVariable Integer orderId) {
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable("orderId") Integer orderId) {
         OrderResponse order = orderService.getOrderById(orderId);
         return ResponseEntity.ok(order);
     }
@@ -74,7 +74,7 @@ public class OrderController {
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get orders by user ID (optionally filter by status)")
     public ResponseEntity<List<OrderResponse>> getOrdersByUserId(
-            @PathVariable Integer userId,
+        @PathVariable("userId") Integer userId,
             @RequestParam(name = "status", required = false) OrderStatus orderStatus
     ) {
         List<OrderResponse> orders = orderService.getOrdersByUserId(userId, orderStatus);

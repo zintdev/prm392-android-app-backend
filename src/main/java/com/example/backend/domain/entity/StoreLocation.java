@@ -28,4 +28,8 @@ public class StoreLocation {
     @Column(nullable=false, length=255)
     private String address; // Đây sẽ là địa chỉ đầy đủ (ví dụ: Chợ Bến Thành...)
 
+    @Builder.Default
+    @Column(name = "is_hub", nullable = false)
+    private boolean hub = false;
+
 }

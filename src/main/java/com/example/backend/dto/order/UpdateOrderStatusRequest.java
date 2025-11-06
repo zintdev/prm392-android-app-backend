@@ -10,4 +10,6 @@ import jakarta.validation.constraints.NotNull;
 public class UpdateOrderStatusRequest {
     @NotNull
     private OrderStatus orderStatus;
+
+    private Integer actorUserId;
 }

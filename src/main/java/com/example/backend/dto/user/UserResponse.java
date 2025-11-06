@@ -17,4 +17,7 @@ public class UserResponse {
     private String email;
     private String phoneNumber;
     private String role;
+    private Integer storeLocationId;
+    private String storeName;
+    private String storeAddress;
 }

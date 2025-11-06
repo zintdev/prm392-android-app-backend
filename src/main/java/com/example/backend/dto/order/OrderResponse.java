@@ -22,6 +22,12 @@ public class OrderResponse {
     private String shippingAddressLine1;
     private String shippingAddressLine2;
     private String shippingCityState;
+    private Integer storeLocationId;
+    private String storeName;
+    private String storeAddress;
+    private Double storeLatitude;
+    private Double storeLongitude;
+    private OffsetDateTime keepingExpiresAt;
     private BigDecimal subtotal;
     private BigDecimal taxTotal;
     private BigDecimal shippingFee;
