@@ -6,10 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface StoreRepository extends JpaRepository<StoreLocation, Integer> {
     boolean existsByStoreNameIgnoreCase(String storeName);
     boolean existsByAddressIgnoreCase(String address);
+
+    Optional<StoreLocation> findFirstByHubTrueOrderByIdAsc();
 
     // 1) Nearby không cần product
     @Query(value = """

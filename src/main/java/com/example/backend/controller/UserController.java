@@ -58,7 +58,7 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
     public ResponseEntity<UserResponse> getUserById(
-            @Parameter(description = "User ID", required = true) @PathVariable Integer id) {
+            @Parameter(description = "User ID", required = true) @PathVariable("id") Integer id) {
         UserResponse response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
@@ -71,7 +71,7 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
     public ResponseEntity<UserResponse> getUserByUsername(
-            @Parameter(description = "Username", required = true) @PathVariable String username) {
+            @Parameter(description = "Username", required = true) @PathVariable("username") String username) {
         UserResponse response = userService.getUserByUsername(username);
         return ResponseEntity.ok(response);
     }
@@ -86,7 +86,7 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
     public ResponseEntity<UserResponse> updateUser(
-            @Parameter(description = "User ID", required = true) @PathVariable Integer id,
+            @Parameter(description = "User ID", required = true) @PathVariable("id") Integer id,
             @Valid @RequestBody UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return ResponseEntity.ok(response);
@@ -100,7 +100,7 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Unauthorized access")
     })
     public ResponseEntity<Void> deleteUser(
-            @Parameter(description = "User ID", required = true) @PathVariable Integer id) {
+            @Parameter(description = "User ID", required = true) @PathVariable("id") Integer id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }

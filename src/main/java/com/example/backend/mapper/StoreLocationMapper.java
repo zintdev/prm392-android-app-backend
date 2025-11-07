@@ -31,4 +31,5 @@ public class StoreLocationMapper {
                 .address(e.getAddress())
                 .build();
     }
+
 }
