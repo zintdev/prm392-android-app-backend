@@ -323,6 +323,9 @@ public class OrderService {
     }
 
     private Order applyStatusChange(Order order, OrderStatus newStatus, User actor, boolean skipAuthorization) {
+        if (!skipAuthorization) {
+            enforcePickupTransitionRules(order, newStatus);
+        }
         authorizeStatusChange(order, newStatus, actor, skipAuthorization);
 
         if (requiresHardDeduction(newStatus)) {
@@ -411,9 +414,9 @@ public class OrderService {
                 if (orderStore == null || !staffStore.getId().equals(orderStore.getId())) {
                     throw new IllegalArgumentException("Staff member is not assigned to this store");
                 }
-                if (!EnumSet.of(OrderStatus.KEEPING, OrderStatus.PROCESSING, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
+                if (!EnumSet.of(OrderStatus.PAID, OrderStatus.KEEPING, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
                         .contains(newStatus)) {
-                    throw new IllegalArgumentException("Store staff can only move pickup orders to KEEPING, PROCESSING, COMPLETED, or CANCELLED");
+                    throw new IllegalArgumentException("Store staff can only move pickup orders to PAID, KEEPING, COMPLETED, or CANCELLED");
                 }
                 return;
             }
@@ -422,6 +425,26 @@ public class OrderService {
         }
 
         // system initiated or other roles: allow unless explicitly constrained above
+    }
+
+    private void enforcePickupTransitionRules(Order order, OrderStatus newStatus) {
+        if (order.getShipmentMethod() != ShipmentMethod.PICKUP) {
+            return;
+        }
+
+        OrderStatus current = order.getOrderStatus();
+        EnumSet<OrderStatus> allowed;
+
+        switch (current) {
+            case PENDING -> allowed = EnumSet.of(OrderStatus.PAID, OrderStatus.CANCELLED);
+            case PAID -> allowed = EnumSet.of(OrderStatus.KEEPING, OrderStatus.CANCELLED);
+            case KEEPING -> allowed = EnumSet.of(OrderStatus.COMPLETED, OrderStatus.CANCELLED);
+            default -> allowed = EnumSet.noneOf(OrderStatus.class);
+        }
+
+        if (!allowed.contains(newStatus)) {
+            throw new IllegalArgumentException("Unsupported status transition for pickup orders");
+        }
     }
 
     private boolean requiresHardDeduction(OrderStatus newStatus) {
