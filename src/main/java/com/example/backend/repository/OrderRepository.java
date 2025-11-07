@@ -19,4 +19,5 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findByShipmentMethodAndOrderStatusAndKeepingExpiresAtBefore(ShipmentMethod shipmentMethod,
                                                                             OrderStatus orderStatus,
                                                                             OffsetDateTime cutoff);
+    List<Order> findByOrderStatusAndOrderDateBefore(OrderStatus orderStatus, OffsetDateTime cutoff);
 }

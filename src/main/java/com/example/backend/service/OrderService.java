@@ -57,7 +57,7 @@ public class OrderService {
         if (paymentMethod == null) {
             throw new IllegalArgumentException("Payment method is required to create an order");
         }
-        OrderStatus targetInitialStatus = resolveInitialStatus(paymentMethod);
+    OrderStatus targetInitialStatus = resolveInitialStatus(paymentMethod, request.getShipmentMethod());
         StoreLocation pickupStore = null;
         OffsetDateTime keepingExpiresAt = null;
 
@@ -338,8 +338,6 @@ public class OrderService {
                 throw new IllegalArgumentException("Only pickup orders can be kept on hold");
             }
             order.setKeepingExpiresAt(OffsetDateTime.now().plusDays(3));
-        } else if (newStatus == OrderStatus.PROCESSING && order.getShipmentMethod() == ShipmentMethod.PICKUP) {
-            order.setKeepingExpiresAt(OffsetDateTime.now().plusDays(2));
         } else {
             order.setKeepingExpiresAt(null);
         }
@@ -413,9 +411,9 @@ public class OrderService {
                 if (orderStore == null || !staffStore.getId().equals(orderStore.getId())) {
                     throw new IllegalArgumentException("Staff member is not assigned to this store");
                 }
-                if (!EnumSet.of(OrderStatus.PROCESSING, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
+                if (!EnumSet.of(OrderStatus.KEEPING, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
                         .contains(newStatus)) {
-                    throw new IllegalArgumentException("Store staff can only move pickup orders to PROCESSING, COMPLETED, or CANCELLED");
+                    throw new IllegalArgumentException("Store staff can only move pickup orders to KEEPING, COMPLETED, or CANCELLED");
                 }
                 return;
             }
@@ -428,6 +426,7 @@ public class OrderService {
 
     private boolean requiresHardDeduction(OrderStatus newStatus) {
         return newStatus == OrderStatus.PROCESSING
+                || newStatus == OrderStatus.KEEPING
                 || newStatus == OrderStatus.SHIPPED
                 || newStatus == OrderStatus.COMPLETED;
     }
@@ -531,6 +530,7 @@ public class OrderService {
     @Scheduled(cron = "0 0 * * * ?")
     public void cancelExpiredPickupOrders() {
         OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime pendingCutoff = now.minusDays(1);
 
         List<Order> holdingExpired = orderRepository
                 .findByOrderStatusAndKeepingExpiresAtBefore(OrderStatus.KEEPING, now);
@@ -542,6 +542,12 @@ public class OrderService {
                 .findByShipmentMethodAndOrderStatusAndKeepingExpiresAtBefore(ShipmentMethod.PICKUP,
                         OrderStatus.PROCESSING, now);
         for (Order order : processingExpired) {
+            applyStatusChange(order, OrderStatus.CANCELLED, null, true);
+        }
+
+        List<Order> stalePending = orderRepository
+                .findByOrderStatusAndOrderDateBefore(OrderStatus.PENDING, pendingCutoff);
+        for (Order order : stalePending) {
             applyStatusChange(order, OrderStatus.CANCELLED, null, true);
         }
     }
@@ -622,8 +628,11 @@ public class OrderService {
         .build();
     }
 
-    private OrderStatus resolveInitialStatus(PaymentMethod paymentMethod) {
+    private OrderStatus resolveInitialStatus(PaymentMethod paymentMethod, ShipmentMethod shipmentMethod) {
         if (paymentMethod == PaymentMethod.COD) {
+            if (shipmentMethod == ShipmentMethod.PICKUP) {
+                return OrderStatus.KEEPING;
+            }
             return OrderStatus.PROCESSING;
         }
         return OrderStatus.PENDING;
