@@ -64,9 +64,10 @@ public class OrderController {
     @GetMapping
     @Operation(summary = "Get all orders (optionally filtered by status)")
     public ResponseEntity<List<OrderResponse>> getAllOrders(
-            @RequestParam(value = "orderStatus", required = false) OrderStatus orderStatus
+            @RequestParam(value = "orderStatus", required = false) OrderStatus orderStatus,
+            @RequestParam(value = "storeId", required = false) Integer storeLocationId
     ) {
-        List<OrderResponse> orders = orderService.getAllOrders(orderStatus);
+        List<OrderResponse> orders = orderService.getAllOrders(orderStatus, storeLocationId);
         return ResponseEntity.ok(orders);
     }
 

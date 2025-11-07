@@ -411,9 +411,9 @@ public class OrderService {
                 if (orderStore == null || !staffStore.getId().equals(orderStore.getId())) {
                     throw new IllegalArgumentException("Staff member is not assigned to this store");
                 }
-                if (!EnumSet.of(OrderStatus.KEEPING, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
+                if (!EnumSet.of(OrderStatus.KEEPING, OrderStatus.PROCESSING, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
                         .contains(newStatus)) {
-                    throw new IllegalArgumentException("Store staff can only move pickup orders to KEEPING, COMPLETED, or CANCELLED");
+                    throw new IllegalArgumentException("Store staff can only move pickup orders to KEEPING, PROCESSING, COMPLETED, or CANCELLED");
                 }
                 return;
             }
@@ -561,17 +561,23 @@ public class OrderService {
     }
 
     // GET ALL ORDERS
-    public List<OrderResponse> getAllOrders(OrderStatus orderStatus) {
+    public List<OrderResponse> getAllOrders(OrderStatus orderStatus, Integer storeLocationId) {
         Sort sort = Sort.by(Sort.Direction.DESC, "orderDate")
                 .and(Sort.by(Sort.Direction.ASC, "orderStatus"));
-        
-        if (orderStatus != null) {
-            return orderRepository.findByOrderStatus(orderStatus, sort).stream()
-                    .map(this::mapToOrderResponse)
-                    .toList();
+
+        List<Order> orders;
+
+        if (storeLocationId != null && orderStatus != null) {
+            orders = orderRepository.findByStoreLocation_IdAndOrderStatus(storeLocationId, orderStatus, sort);
+        } else if (storeLocationId != null) {
+            orders = orderRepository.findByStoreLocation_Id(storeLocationId, sort);
+        } else if (orderStatus != null) {
+            orders = orderRepository.findByOrderStatus(orderStatus, sort);
+        } else {
+            orders = orderRepository.findAll(sort);
         }
-        
-        return orderRepository.findAll(sort).stream()
+
+        return orders.stream()
                 .map(this::mapToOrderResponse)
                 .toList();
     }
