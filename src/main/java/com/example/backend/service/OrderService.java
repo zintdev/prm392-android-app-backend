@@ -439,6 +439,7 @@ public class OrderService {
             case PENDING -> allowed = EnumSet.of(OrderStatus.PAID, OrderStatus.CANCELLED);
             case PAID -> allowed = EnumSet.of(OrderStatus.KEEPING, OrderStatus.CANCELLED);
             case KEEPING -> allowed = EnumSet.of(OrderStatus.COMPLETED, OrderStatus.CANCELLED);
+            case PROCESSING -> allowed = EnumSet.of(OrderStatus.KEEPING, OrderStatus.COMPLETED, OrderStatus.CANCELLED);
             default -> allowed = EnumSet.noneOf(OrderStatus.class);
         }
 
@@ -629,11 +630,13 @@ public class OrderService {
 
     StoreLocation storeLocation = order.getStoreLocation();
 
+    OrderStatus displayStatus = resolveDisplayStatus(order);
+
     return OrderResponse.builder()
         .id(order.getId())
         .userId(order.getUser().getId())
         .cartId(order.getCart() != null ? order.getCart().getId() : null)
-        .orderStatus(order.getOrderStatus())
+        .orderStatus(displayStatus)
         .shipmentMethod(order.getShipmentMethod())
         .orderDate(order.getOrderDate())
         .shippingFullName(order.getShippingFullName())
@@ -655,6 +658,18 @@ public class OrderService {
         .grandTotal(order.getGrandTotal())
         .items(itemResponses)
         .build();
+    }
+
+    private OrderStatus resolveDisplayStatus(Order order) {
+        if (order == null) {
+            return null;
+        }
+        OrderStatus status = order.getOrderStatus();
+        ShipmentMethod shipmentMethod = order.getShipmentMethod();
+        if (shipmentMethod == ShipmentMethod.PICKUP && status == OrderStatus.PROCESSING) {
+            return OrderStatus.KEEPING;
+        }
+        return status;
     }
 
     private OrderStatus resolveInitialStatus(PaymentMethod paymentMethod, ShipmentMethod shipmentMethod) {
