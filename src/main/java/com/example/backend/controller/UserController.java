@@ -1,0 +1,107 @@
+package com.example.backend.controller;
+
+import com.example.backend.dto.user.UserRequest;
+import com.example.backend.dto.user.UserResponse;
+import com.example.backend.dto.user.UserUpdateRequest;
+import com.example.backend.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+@Tag(name = "Users", description = "APIs for managing users")
+@SecurityRequirement(name = "bearerAuth")
+public class UserController {
+    
+    private final UserService userService;
+    
+    @PostMapping
+    @Operation(summary = "Create a new user", description = "Creates a new user with the provided information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "409", description = "Username or email already exists")
+    })
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
+        UserResponse response = userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    
+    @GetMapping
+    @Operation(summary = "Get all users", description = "Retrieves a list of all users")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all users"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+    })
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved user"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+    })
+    public ResponseEntity<UserResponse> getUserById(
+            @Parameter(description = "User ID", required = true) @PathVariable("id") Integer id) {
+        UserResponse response = userService.getUserById(id);
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/username/{username}")
+    @Operation(summary = "Get user by username", description = "Retrieves a specific user by their username")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved user"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+    })
+    public ResponseEntity<UserResponse> getUserByUsername(
+            @Parameter(description = "Username", required = true) @PathVariable("username") String username) {
+        UserResponse response = userService.getUserByUsername(username);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PutMapping("/{id}")
+    @Operation(summary = "Update user", description = "Updates an existing user's information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "409", description = "Username or email already exists"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+    })
+    public ResponseEntity<UserResponse> updateUser(
+            @Parameter(description = "User ID", required = true) @PathVariable("id") Integer id,
+            @Valid @RequestBody UserUpdateRequest request) {
+        UserResponse response = userService.updateUser(id, request);
+        return ResponseEntity.ok(response);
+    }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete user", description = "Deletes a user by their ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "User deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access")
+    })
+    public ResponseEntity<Void> deleteUser(
+            @Parameter(description = "User ID", required = true) @PathVariable("id") Integer id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+}
